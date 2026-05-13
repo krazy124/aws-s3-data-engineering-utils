@@ -1,0 +1,17 @@
+A really good next step would be:
+
+test_file.txt
+
+Add a tiny sample text file into the repo so your upload/download functions have something predictable to work with during testing.
+
+Then eventually:
+
+.env support
+config file
+logging setup
+pagination for large buckets
+object metadata
+parquet uploads
+pandas integration
+Lambda deployment
+Glue/S3 pipelines
