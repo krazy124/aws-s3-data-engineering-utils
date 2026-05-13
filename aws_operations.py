@@ -1,3 +1,13 @@
+"""
+AWS S3 utility functions built with boto3.
+
+This module provides helper functions for common Amazon S3 operations,
+including bucket creation, file uploads/downloads, object listing,
+and object deletion.
+
+Intended for AWS learning, experimentation, and reusable cloud storage workflows.
+"""
+
 import logging
 import boto3
 from botocore.exceptions import ClientError
