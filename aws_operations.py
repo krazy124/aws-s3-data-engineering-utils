@@ -11,6 +11,7 @@ Intended for AWS learning, experimentation, and reusable cloud storage workflows
 import logging
 import boto3
 from botocore.exceptions import ClientError
+from botocore.config import Config
 
 
 s3_client = boto3.client('s3')
@@ -179,3 +180,38 @@ def lambda_handler(event, context):
         'statusCode': 200,
         'body': 'AWS operations completed successfully.'
     }
+
+
+def create_presigned_url(
+    bucket_name, object_name, region_name, expiration=3600
+):
+    """Generate a presigned URL to share an S3 object
+
+    :param bucket_name: string
+    :param object_name: string
+    :param region_name: string
+    :param expiration: Time in seconds for the presigned URL to remain valid
+    :return: Presigned URL as string. If error, returns None.
+    """
+
+    # Generate a presigned URL for the S3 object
+    s3_client = boto3.client(
+        's3',
+        region_name=region_name,
+        config=Config(
+            signature_version='s3v4',
+            s3={'addressing_style': 'virtual'},
+        ),
+    )
+    try:
+        response = s3_client.generate_presigned_url(
+            'get_object',
+            Params={'Bucket': bucket_name, 'Key': object_name},
+            ExpiresIn=expiration,
+        )
+    except ClientError as e:
+        logging.error(e)
+        return None
+
+    # The response contains the presigned URL
+    return response
