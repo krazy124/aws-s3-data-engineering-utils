@@ -6,6 +6,16 @@ including bucket creation, file uploads/downloads, object listing,
 and object deletion.
 
 Intended for AWS learning, experimentation, and reusable cloud storage workflows.
+
+Current working module.
+
+Future split plan:
+- s3_bucket_operations.py
+- s3_file_operations.py
+- s3_folder_operations.py
+- s3_data_operations.py
+- s3_folder_operations.py
+
 """
 
 import logging
