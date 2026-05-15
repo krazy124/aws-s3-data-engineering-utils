@@ -1,0 +1,26 @@
+customer_id,full_name,email,city,department,status,purchase_amount,signup_date,notes,score
+1.0, John  Jones ,none,houston,HR,, 250 , 2024-09-10 ,Needs Follow Up ,100
+, John  Smith, USER@MAIL.COM ,houston,marketing, Suspended,??,2024-01-15,Prefers email,85 
+,bob garcia ,, New York,HR,,500.00,,Returned item,85 
+4.0, kevin Miller, USER@MAIL.COM ,los angeles ,IT ,Active,,,Returned item, 72
+5.0,JULIA garcia , USER@MAIL.COM , Dallas ,engineering , Suspended,four hundred,02-28-2024,,100
+6.0,JULIA johnson ,test@example.com,houston, Finance ,Active,N/A,01/22/2024,duplicate?, seventy
+,Isaac  Miller,bademail@,SAN ANTONIO ,operations, inactive ,four hundred,01/22/2024,VIP,100
+8.0,ALICE garcia ,hello@site, Phoenix ,marketing,,,2024-01-15, late payer , 72
+9.0, kevin Miller,hello@site, Phoenix ,engineering , inactive ,??,, late payer ,N/A
+, Eve garcia ,bademail@, Phoenix ,HR, inactive ,"1,200", 2024-09-10 ,Returned item,N/A
+, hannah  Davis,sample.user@gmail.com,houston,HR, Suspended, 75,01/22/2024, good client, 72
+12.0,ALICE WILLIAMS,hello@site,los angeles ,IT ,active ,??,2024-07-32,Prefers email, seventy
+13.0,Isaac  johnson ,,SAN ANTONIO ,engineering ,PENDING,500.00,March 5 2024,  ,90
+13.0,GRACE WILLIAMS, USER@MAIL.COM , Phoenix ,marketing, inactive ,,March 5 2024,Prefers email, 72
+15.0, hannah Miller,foo@bar.com , New York,engineering ,PENDING,four hundred,2024/04/18, good client,85 
+16.0,jane  garcia , USER@MAIL.COM ,CHICAGO,HR,, 75, 2024-09-10 ,VIP, seventy
+,bob RODRIGUEZ,none, Phoenix ,IT ,,,2024-07-32,Prefers email,
+18.0,bob brown, USER@MAIL.COM ,SAN ANTONIO , Sales, Suspended,"1,200",2024/04/18, late payer ,90
+19.0,JULIA  Smith,none,los angeles , Sales,PENDING, 250 , 2024-09-10 , late payer , seventy
+,bob RODRIGUEZ,bademail@,austin,marketing,active ,500.00,2024/04/18,Needs Follow Up ,90
+,dAvE  Davis,hello@site,austin, Sales,, 250 ,2024-01-15,duplicate?,N/A
+21.0, kevin johnson ,none,houston,marketing, Suspended, 75,March 5 2024,duplicate?,85 
+22.0,frank  brown, USER@MAIL.COM ,austin,engineering ,Active,"1,200",2024-01-15,Needs Follow Up , 72
+24.0,ALICE  Davis,foo@bar.com ,austin,marketing,active ,100,March 5 2024,duplicate?,90
+, Charlie  garcia ,, Dallas ,support, inactive ,N/A,not a date, late payer ,90
