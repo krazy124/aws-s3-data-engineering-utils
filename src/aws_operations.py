@@ -511,28 +511,17 @@ def get_file_size(bucket_name, object_name, region="us-east-1"):
 
 
 def main():
-    bucket_name = "my-test-bucket-12345"
-    file_name = "test_file.txt"
-    object_name = "test_file.txt"
+    """
+        Safe test entry point for aws_operations.py.
 
-    if create_bucket(bucket_name):
-        print(f'Bucket "{bucket_name}" created successfully.')
+        aws_operations.py is not intended to be run directly.
+        This main function serves as a placeholder for quick tests
+        or demonstrations when running this file manually.
+    """
 
-    print("Buckets in account:", bucket_list())
-
-    if upload_file(bucket_name, file_name, object_name):
-        print(f'File "{file_name}" uploaded successfully as "{object_name}".')
-
-    print(f'Files in bucket "{bucket_name}":', list_files(bucket_name))
-
-    if download_file(bucket_name, object_name, "downloaded_" + file_name):
-        print(f'File "{object_name}" downloaded successfully.')
-
-    if delete_file(bucket_name, object_name):
-        print(f'File "{object_name}" deleted successfully.')
-
-    if delete_bucket(bucket_name):
-        print(f'Bucket "{bucket_name}" deleted successfully.')
+    print("aws_operations.py loaded successfully.")
+    print("Reusable AWS S3 utility module.")
+    print("Import this file into another script or Streamlit app.")
 
 
 if __name__ == "__main__":
