@@ -1,3 +1,41 @@
+# ==================================================
+# IDENTIFIER SYSTEM
+# ==================================================
+
+# LEVEL 1
+# | s | Section
+
+# LEVEL 2
+# | a | Subsection
+
+# LEVEL 3
+# | f | Function Call
+# | b | Button
+# | i | Input Element
+# | l | List / Select Element
+# | c | Container / Layout
+# | x | Control Logic / Session State
+# | m | Message / Status Output
+# | d | Data Display / Render Output
+# | t | Text / Titles / Headers
+# | u | Utility / Helper Logic
+
+# LEVEL 4
+# | v | Version
+
+# EXAMPLE BREAKDOWN
+# -----------------
+
+# s4.v1 == Section 4 → Version 1
+
+# s4`l1.v1 == Section 4 → List Element 1 → Version 1
+
+# s4l1`c1.v1 == Section 4 → List Element 1 → Container 1 → Version 1
+
+# s4l1c1`b1.v1 == Section 4 → List Element 1 → Container 1 → Button 1 → Version 1
+
+# ==================================================
+
 import streamlit as st
 import base64
 
@@ -8,48 +46,6 @@ from src.aws_operations import (
     empty_bucket,
     delete_bucket
 )
-
-
-"""
-==================================================
-IDENTIFIER SYSTEM
-==================================================
-
-LEVEL 1
-| s | Section
-
-LEVEL 2
-| a | Subsection
-
-LEVEL 3
-| f | Function Call
-| b | Button
-| i | Input Element
-| l | List / Select Element
-| c | Container / Layout
-| x | Control Logic / Session State
-| m | Message / Status Output
-| d | Data Display / Render Output
-| t | Text / Titles / Headers
-| u | Utility / Helper Logic
-
-LEVEL 4
-| v | Version
-
-EXAMPLE BREAKDOWN
------------------
-
-s4.v1 == Section 4 → Version 1
-
-s4`l1.v1 == Section 4 → List Element 1 → Version 1
-
-s4l1`c1.v1 == Section 4 → List Element 1 → Container 1 → Version 1
-
-s4l1c1`b1.v1 == Section 4 → List Element 1 → Container 1 → Button 1 → Version 1
-
-==================================================
-"""
-
 
 # ====== s1.v1 - Streamlit Page Configuration Section ======
 # s1`u1.v1
