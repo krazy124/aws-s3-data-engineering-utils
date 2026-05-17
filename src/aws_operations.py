@@ -176,6 +176,38 @@ def list_files(bucket_name, region="us-east-1"):
         return []
 
 
+def list_folders(bucket_name, prefix="", region="us-east-1"):
+    """List folder-like prefixes in an S3 bucket."""
+    try:
+        s3_client = get_s3_client(region)
+
+        response = s3_client.list_objects_v2(
+            Bucket=bucket_name,
+            Prefix=prefix,
+            Delimiter="/"
+        )
+
+        folders = []
+
+        for item in response.get("CommonPrefixes", []):
+            folders.append(item["Prefix"])
+
+        for obj in response.get("Contents", []):
+            key = obj["Key"]
+            if key.endswith("/") and key not in folders:
+                folders.append(key)
+
+        return folders
+
+    except NoCredentialsError:
+        logging.error("AWS credentials not configured.")
+        return []
+
+    except ClientError as e:
+        logging.error(f'Failed to list folders in "{bucket_name}": {e}')
+        return []
+
+
 def create_presigned_url(bucket_name, object_name, region_name, expiration=3600):
     """Generate a presigned URL to share an S3 object."""
     try:
