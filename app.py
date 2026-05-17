@@ -306,15 +306,73 @@ if st.session_state.bucket_mode == "select":
 
             elif st.session_state.bucket_action == "empty_bucket":
 
-                # s4a2`m5.v1
+                # s4a2`m5.v2
                 st.warning(
-                    "Empty bucket workflow requires confirmation before enabling.")
+                    f'You are about to empty bucket "{selected_bucket}".'
+                )
+
+                # s4a2m5`i1.v1
+                confirm_empty_bucket = st.checkbox(
+                    f'I understand this will delete all objects in "{selected_bucket}".'
+                )
+
+                # s4a2m5`b1.v1
+                if st.button("Confirm Empty Bucket", use_container_width=True):
+                    if confirm_empty_bucket:
+
+                        # s4a2m5b1`f1.v1
+                        emptied = empty_bucket(selected_bucket)
+
+                        if emptied:
+                            # s4a2m5b1f1`m1.v1
+                            st.success(
+                                f'Bucket "{selected_bucket}" emptied successfully.'
+                            )
+                        else:
+                            # s4a2m5b1f1`m2.v1
+                            st.error(
+                                f'Bucket "{selected_bucket}" was not emptied.'
+                            )
+                    else:
+                        # s4a2m5b1`m1.v1
+                        st.warning("Check the confirmation box first.")
 
             elif st.session_state.bucket_action == "delete_bucket":
 
-                # s4a2`m6.v1
+                # s4a2`m6.v2
                 st.warning(
-                    "Delete bucket workflow requires confirmation before enabling.")
+                    f'You are about to delete bucket "{selected_bucket}".'
+                )
+
+                # s4a2m6`i1.v1
+                confirm_delete_bucket = st.checkbox(
+                    f'I understand this will permanently delete bucket "{selected_bucket}".'
+                )
+
+                # s4a2m6`b1.v1
+                if st.button("Confirm Delete Bucket", use_container_width=True):
+                    if confirm_delete_bucket:
+
+                        # s4a2m6b1`f1.v1
+                        deleted = delete_bucket(selected_bucket)
+
+                        if deleted:
+                            # s4a2m6b1f1`m1.v1
+                            st.success(
+                                f'Bucket "{selected_bucket}" deleted successfully.'
+                            )
+
+                            # s4a2m6b1f1`x1.v1
+                            st.session_state.bucket_action = None
+
+                        else:
+                            # s4a2m6b1f1`m2.v1
+                            st.error(
+                                f'Bucket "{selected_bucket}" was not deleted. Empty the bucket first, then try again.'
+                            )
+                    else:
+                        # s4a2m6b1`m1.v1
+                        st.warning("Check the confirmation box first.")
 
     else:
 
