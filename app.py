@@ -301,28 +301,28 @@ if st.session_state.bucket_mode == "select":
                     placeholder="example: raw/ or processed/"
                 )
 
-                # s4a2`b1.v1
+                # s4a2i1`b1.v1
                 if st.button("Create Folder Prefix", use_container_width=True):
                     if new_folder_name:
 
-                        # s4a2b1`f1.v1
+                        # s4a2i1b1`f1.v1
                         created_folder = create_folder(
                             selected_bucket,
                             new_folder_name
                         )
 
                         if created_folder:
-                            # s4a2b1f1`m1.v1
+                            # s4a2i1b1f1`m1.v1
                             st.success(
                                 f'Folder prefix "{new_folder_name}" created successfully.'
                             )
                         else:
-                            # s4a2b1f1`m2.v1
+                            # s4a2i1b1f1`m2.v1
                             st.error(
                                 f'Folder prefix "{new_folder_name}" was not created.'
                             )
                     else:
-                        # s4a2b1`m1.v1
+                        # s4a2i1b1`m1.v1
                         st.warning("Enter a folder prefix name first.")
 
             elif st.session_state.bucket_action == "upload_folder":
