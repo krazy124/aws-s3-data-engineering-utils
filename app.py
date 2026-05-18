@@ -327,13 +327,105 @@ if st.session_state.bucket_mode == "select":
 
             elif st.session_state.bucket_action == "upload_folder":
 
-                # s4a2`m3.v1
-                st.info("Upload folder workflow coming next.")
+                # s4a2`t2.v1
+                st.subheader("Upload Local Folder to S3 Prefix")
+
+                # s4a2`i2.v1
+                local_upload_path = st.text_input(
+                    "Local Folder Path",
+                    placeholder=r"example: C:\Users\willi\Desktop\s3_upload_test"
+                )
+
+                # s4a2`i3.v1
+                s3_upload_prefix = st.text_input(
+                    "S3 Folder Prefix",
+                    placeholder="example: raw/ or uploads/test/"
+                )
+
+                # s4a2`m3.v2
+                st.info(
+                    "This will upload every file inside the local folder into the selected S3 bucket under the prefix you enter."
+                )
+
+                # s4a2`b2.v1
+                if st.button("Confirm Upload Folder", use_container_width=True):
+                    if not local_upload_path:
+                        st.warning("Enter a local folder path first.")
+
+                    elif not s3_upload_prefix:
+                        st.warning("Enter an S3 folder prefix first.")
+
+                    else:
+                        uploaded = upload_folder(
+                            selected_bucket,
+                            s3_upload_prefix,
+                            local_upload_path
+                        )
+
+                        if uploaded:
+                            st.success(
+                                f'Uploaded local folder "{local_upload_path}" to "{selected_bucket}/{s3_upload_prefix}".'
+                            )
+                        else:
+                            st.error(
+                                "Folder was not uploaded. Check the local path, AWS permissions, or logs."
+                            )
 
             elif st.session_state.bucket_action == "download_folder":
 
-                # s4a2`m4.v1
-                st.info("Download folder workflow coming next.")
+                # s4a2`t3.v1
+                st.subheader("Download S3 Prefix to Local Folder")
+
+                # s4a2`f3.v1
+                available_folders = list_folders(selected_bucket)
+
+                # s4a2`l2.v1
+                if available_folders:
+                    s3_download_prefix = st.selectbox(
+                        "Choose S3 Folder Prefix",
+                        available_folders
+                    )
+                else:
+                    s3_download_prefix = st.text_input(
+                        "S3 Folder Prefix",
+                        placeholder="example: raw/ or processed/"
+                    )
+
+                # s4a2`i4.v1
+                local_download_path = st.text_input(
+                    "Local Download Folder Path",
+                    placeholder=r"example: C:\Users\willi\Desktop\s3_download_test"
+                )
+
+                # s4a2`m4.v2
+                st.info(
+                    "This will download every object under the selected S3 prefix into the local folder path you enter."
+                )
+
+                # s4a2`b3.v1
+                if st.button("Confirm Download Folder", use_container_width=True):
+                    if not s3_download_prefix:
+                        st.warning(
+                            "Enter or choose an S3 folder prefix first.")
+
+                    elif not local_download_path:
+                        st.warning("Enter a local download folder path first.")
+
+                    else:
+                        downloaded = download_folder(
+                            selected_bucket,
+                            s3_download_prefix,
+                            local_download_path
+                        )
+
+                        if downloaded:
+                            st.success(
+                                f'Downloaded "{selected_bucket}/{s3_download_prefix}" to "{local_download_path}".'
+                            )
+                        else:
+                            st.error(
+                                "Folder was not downloaded. Check the S3 prefix, AWS permissions, or logs."
+                            )
 
             elif st.session_state.bucket_action == "empty_bucket":
 
