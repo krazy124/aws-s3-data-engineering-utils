@@ -42,15 +42,16 @@ import base64
 from src.aws_operations import *
 
 
-s3_client = get_s3_client()
-
-if s3_client is None:
-    st.stop()
     
 # ====== s1.v1 - Streamlit Page Configuration Section ======
 # s1`u1.v1
 st.set_page_config(page_title="AWS S3 Utility Dashboard", layout="wide")
 
+
+s3_client = get_s3_client()
+
+if s3_client is None:
+    st.stop()
 
 # ====== s1`a1.v1 - Background Image Styling Section ======
 # s1a1`u1.v1
