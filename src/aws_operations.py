@@ -24,8 +24,57 @@ import boto3
 import pandas as pd
 import time
 from botocore.config import Config
-from botocore.exceptions import ClientError, NoCredentialsError
+from botocore.exceptions import ClientError, NoCredentialsError,PartialCredentialsError
+import streamlit as st
 
+def get_s3_client():
+    # 1. Try normal local / environment / AWS config credentials
+    try:
+        client = boto3.client("s3")
+        client.list_buckets()
+        return client
+    except (NoCredentialsError, PartialCredentialsError):
+        pass
+    except Exception:
+        pass
+
+    # 2. Try Streamlit secrets
+    try:
+        client = boto3.client(
+            "s3",
+            aws_access_key_id=st.secrets["AWS_ACCESS_KEY_ID"],
+            aws_secret_access_key=st.secrets["AWS_SECRET_ACCESS_KEY"],
+            region_name=st.secrets.get("AWS_DEFAULT_REGION", "us-east-1")
+        )
+        client.list_buckets()
+        return client
+    except Exception:
+        pass
+
+    # 3. Manual credential form
+    st.warning("AWS credentials were not found. Enter credentials below.")
+
+    with st.form("aws_credentials_form"):
+        access_key = st.text_input("AWS Access Key ID")
+        secret_key = st.text_input("AWS Secret Access Key", type="password")
+        region = st.text_input("AWS Region", value="us-east-1")
+        submitted = st.form_submit_button("Connect to AWS")
+
+    if submitted:
+        st.session_state["aws_access_key_id"] = access_key
+        st.session_state["aws_secret_access_key"] = secret_key
+        st.session_state["aws_region"] = region
+        st.rerun()
+
+    if "aws_access_key_id" in st.session_state:
+        return boto3.client(
+            "s3",
+            aws_access_key_id=st.session_state["aws_access_key_id"],
+            aws_secret_access_key=st.session_state["aws_secret_access_key"],
+            region_name=st.session_state["aws_region"]
+        )
+
+    return None
 
 logging.basicConfig(
     level=logging.INFO,
