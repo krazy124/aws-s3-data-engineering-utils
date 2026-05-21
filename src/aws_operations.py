@@ -86,7 +86,6 @@ def get_s3_client(region="us-east-1"):
     """Create and return an S3 client."""
     return boto3.client("s3", region_name=region)
 
-
 def create_bucket(bucket_name, region="us-east-1"):
     """Create an S3 bucket in a specified region."""
     try:
