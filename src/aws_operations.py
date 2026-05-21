@@ -30,7 +30,7 @@ import streamlit as st
 def get_s3_client(region="us-east-1"):
     # 1. Try normal local / environment / AWS config credentials
     try:
-        client = boto3.client("s3")
+        client = boto3.client("s3", region_name=region)
         client.list_buckets()
         return client
     except (NoCredentialsError, PartialCredentialsError):
@@ -44,7 +44,7 @@ def get_s3_client(region="us-east-1"):
             "s3",
             aws_access_key_id=st.secrets["AWS_ACCESS_KEY_ID"],
             aws_secret_access_key=st.secrets["AWS_SECRET_ACCESS_KEY"],
-            region_name=st.secrets.get("AWS_DEFAULT_REGION", "us-east-1")
+            region_name=st.secrets.get("AWS_DEFAULT_REGION", region)
         )
         client.list_buckets()
         return client
