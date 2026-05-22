@@ -24,8 +24,9 @@ import boto3
 import pandas as pd
 import time
 from botocore.config import Config
-from botocore.exceptions import ClientError, NoCredentialsError,PartialCredentialsError
+from botocore.exceptions import ClientError, NoCredentialsError, PartialCredentialsError
 import streamlit as st
+
 
 def get_s3_client(region="us-east-1"):
     # 1. Try normal local / environment / AWS config credentials
@@ -76,11 +77,11 @@ def get_s3_client(region="us-east-1"):
 
     return None
 
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
-
 
 
 def create_bucket(bucket_name, region="us-east-1"):
