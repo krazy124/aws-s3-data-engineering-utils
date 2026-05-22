@@ -342,6 +342,40 @@ def create_folder(bucket_name, folder_name, region="us-east-1"):
         return False
 
 
+def list_all_folders(bucket_name, region="us-east-1"):
+    """List all folder-like prefixes anywhere in an S3 bucket."""
+    try:
+        s3_client = get_s3_client(region)
+
+        response = s3_client.list_objects_v2(Bucket=bucket_name)
+
+        folders = set()
+
+        for obj in response.get("Contents", []):
+            key = obj["Key"]
+
+            if "/" in key:
+                parts = key.split("/")[:-1]
+
+                current_prefix = ""
+                for part in parts:
+                    current_prefix += part + "/"
+                    folders.add(current_prefix)
+
+            if key.endswith("/"):
+                folders.add(key)
+
+        return sorted(folders)
+
+    except NoCredentialsError:
+        logging.error("AWS credentials not configured.")
+        return []
+
+    except ClientError as e:
+        logging.error(f'Failed to list all folders in "{bucket_name}": {e}')
+        return []
+
+
 def upload_folder(
     bucket_name,
     folder_name,
@@ -403,10 +437,60 @@ def upload_folder(
         return False
 
 
-def download_folder(bucket_name, folder_name, local_folder_path, region="us-east-1"):
-    """Download a folder-like prefix from S3 to a local path."""
+def delete_folder(bucket_name, folder_name, region="us-east-1"):
+    """Delete a folder-like prefix and all objects under it from S3."""
     if not folder_name.endswith("/"):
         folder_name += "/"
+
+    try:
+        s3_client = get_s3_client(region)
+
+        response = s3_client.list_objects_v2(
+            Bucket=bucket_name,
+            Prefix=folder_name
+        )
+
+        objects_to_delete = [
+            {"Key": obj["Key"]}
+            for obj in response.get("Contents", [])
+        ]
+
+        if objects_to_delete:
+            s3_client.delete_objects(
+                Bucket=bucket_name,
+                Delete={"Objects": objects_to_delete}
+            )
+
+        logging.info(f'Deleted folder prefix "{bucket_name}/{folder_name}".')
+        return True
+
+    except NoCredentialsError:
+        logging.error("AWS credentials not configured.")
+        return False
+
+    except ClientError as e:
+        logging.error(f'Failed to delete folder "{folder_name}": {e}')
+        return False
+
+
+def download_folder(bucket_name, folder_name, local_folder_path, include_root_folder=False, region="us-east-1"):
+    """Download a folder-like prefix from S3 to a local path.
+
+    If include_root_folder is False:
+        raw/file.csv -> local_folder_path/file.csv
+
+    If include_root_folder is True:
+        raw/file.csv -> local_folder_path/raw/file.csv
+    """
+    if not folder_name.endswith("/"):
+        folder_name += "/"
+
+    if include_root_folder:
+        root_folder_name = folder_name.rstrip("/").split("/")[-1]
+        local_folder_path = os.path.join(
+            local_folder_path,
+            root_folder_name
+        )
 
     try:
         s3_client = get_s3_client(region)

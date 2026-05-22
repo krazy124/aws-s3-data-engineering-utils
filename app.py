@@ -43,7 +43,6 @@ import base64
 from src.aws_operations import *
 
 
-    
 # ====== s1.v1 - Streamlit Page Configuration Section ======
 # s1`u1.v1
 st.set_page_config(page_title="AWS S3 Utility Dashboard", layout="wide")
@@ -56,6 +55,8 @@ if s3_client is None:
 
 # ====== s1`a1.v1 - Background Image Styling Section ======
 # s1a1`u1.v1
+
+
 def get_base64_image(image_path):
     with open(image_path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode()
@@ -195,8 +196,8 @@ if st.session_state.bucket_mode == "select":
         # s4l1`t1.v1
         st.subheader("Bucket Actions")
 
-        # s4l1`c1.v2
-        col3, col4, col5 = st.columns(3)
+        # s4l1`c1.v3
+        col3, col4, col5, col5b = st.columns(4)
 
         # s4l1c1`b1.v3
         with col3:
@@ -212,6 +213,11 @@ if st.session_state.bucket_mode == "select":
         with col5:
             create_folder_clicked = st.button(
                 "Create Folder (Prefix)", use_container_width=True)
+
+        # s4l1c1`b4.v1
+        with col5b:
+            delete_folder_clicked = st.button(
+                "Delete Folder (Prefix)", use_container_width=True)
 
         # s4l1`c2.v2
         col6, col7 = st.columns(2)
@@ -255,6 +261,10 @@ if st.session_state.bucket_mode == "select":
         # s4x1`e3.v1
         if create_folder_clicked:
             st.session_state.bucket_action = "create_folder"
+
+        # s4x1`e3b.v1
+        if delete_folder_clicked:
+            st.session_state.bucket_action = "delete_folder"
 
         # s4x1`e4.v1
         if upload_folder_clicked:
@@ -352,6 +362,66 @@ if st.session_state.bucket_mode == "select":
                         # s4a2i1b1`m1.v1
                         st.warning("Enter a folder prefix name first.")
 
+            # s4a2`e3b.v1
+            elif st.session_state.bucket_action == "delete_folder":
+
+                # s4a2`t2b.v1
+                st.subheader("Delete Folder Prefix")
+
+                # s4a2`f2b.v2
+                available_delete_folders = list_all_folders(selected_bucket)
+
+                # s4a2e3b`e1.v1
+                if available_delete_folders:
+
+                    # s4a2`l1b.v1
+                    selected_folder_to_delete = st.selectbox(
+                        "Choose Folder Prefix to Delete",
+                        available_delete_folders
+                    )
+
+                    # s4a2`i1b.v1
+                    confirm_delete_folder = st.checkbox(
+                        f'I understand this will delete everything inside "{selected_folder_to_delete}".'
+                    )
+
+                    # s4a2l1b`b1.v1
+                    if st.button("Confirm Delete Folder", use_container_width=True):
+
+                        # s4a2e3bl1b`e1.v1
+                        if confirm_delete_folder:
+
+                            # s4a2l1bb1`f1.v1
+                            deleted = delete_folder(
+                                selected_bucket,
+                                selected_folder_to_delete
+                            )
+
+                            # s4a2e3bl1bb1`e1.v1
+                            if deleted:
+
+                                # s4a2l1bb1f1`m1.v1
+                                st.success(
+                                    f'Folder prefix "{selected_folder_to_delete}" deleted successfully.'
+                                )
+
+                            else:
+
+                                # s4a2l1bb1f1`m2.v1
+                                st.error(
+                                    f'Folder prefix "{selected_folder_to_delete}" was not deleted.'
+                                )
+
+                        else:
+
+                            # s4a2l1bb1`m1.v1
+                            st.warning("Check the confirmation box first.")
+
+                else:
+
+                    # s4a2f2b`m1.v1
+                    st.warning("No folder prefixes found in this bucket.")
+
             # s4a2e4.v2
             elif st.session_state.bucket_action == "upload_folder":
 
@@ -439,8 +509,8 @@ if st.session_state.bucket_mode == "select":
                 # s4a2`t3.v1
                 st.subheader("Download S3 Prefix to Local Folder")
 
-                # s4a2`f3.v1
-                available_folders = list_folders(selected_bucket)
+                # s4a2`f3.v2
+                available_folders = list_all_folders(selected_bucket)
 
                 # s4a2`l2.v1
                 # s4a2e5`e1.v1
@@ -461,6 +531,15 @@ if st.session_state.bucket_mode == "select":
                     placeholder=r"example: C:\Users\willi\Desktop\s3_download_test"
                 )
 
+                # s4a2`i6.v1
+                download_mode = st.radio(
+                    "Download Mode",
+                    [
+                        "Download the folder and its files",
+                        "Download only the files"
+                    ]
+                )
+
                 # s4a2`m4.v2
                 st.info(
                     "This will download every object under the selected S3 prefix into the local folder path you enter."
@@ -477,10 +556,17 @@ if st.session_state.bucket_mode == "select":
                         st.warning("Enter a local download folder path first.")
 
                     else:
+                        # s4a2b3`x1.v1
+                        include_root_folder = (
+                            download_mode == "Download the folder and its files"
+                        )
+
+                        # s4a2b3`f1.v2
                         downloaded = download_folder(
                             selected_bucket,
                             s3_download_prefix,
-                            local_download_path
+                            local_download_path,
+                            include_root_folder=include_root_folder
                         )
 
                         if downloaded:
