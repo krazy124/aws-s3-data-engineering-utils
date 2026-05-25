@@ -114,6 +114,8 @@ def bucket_list(region="us-east-1"):
         s3_client = get_s3_client(region)
         response = s3_client.list_buckets()
         return [bucket["Name"] for bucket in response["Buckets"]]
+        [bucket["Name"] for bucket in get_s3_client(region).list_buckets()["Buckets"]]
+        return []
 
     except NoCredentialsError:
         logging.error("AWS credentials not configured.")
@@ -597,6 +599,77 @@ def move_file(
     return False
 
 
+def move_folder(
+    source_bucket_name,
+    source_folder_name,
+    dest_bucket_name,
+    dest_folder_name,
+    region="us-east-1",
+):
+    """Move a folder-like prefix and all contents to another location."""
+
+    if not source_folder_name.endswith("/"):
+        source_folder_name += "/"
+
+    if not dest_folder_name.endswith("/"):
+        dest_folder_name += "/"
+
+    try:
+        s3_client = get_s3_client(region)
+
+        response = s3_client.list_objects_v2(
+            Bucket=source_bucket_name,
+            Prefix=source_folder_name
+        )
+
+        objects = response.get("Contents", [])
+
+        for obj in objects:
+
+            source_key = obj["Key"]
+
+            relative_path = source_key.replace(
+                source_folder_name,
+                "",
+                1
+            )
+
+            destination_key = f"{dest_folder_name}{relative_path}"
+
+            copy_source = {
+                "Bucket": source_bucket_name,
+                "Key": source_key
+            }
+
+            s3_client.copy(
+                copy_source,
+                dest_bucket_name,
+                destination_key
+            )
+
+            s3_client.delete_object(
+                Bucket=source_bucket_name,
+                Key=source_key
+            )
+
+        logging.info(
+            f'Moved folder "{source_folder_name}" '
+            f'to "{dest_folder_name}".'
+        )
+
+        return True
+
+    except NoCredentialsError:
+        logging.error("AWS credentials not configured.")
+        return False
+
+    except ClientError as e:
+        logging.error(
+            f'Failed to move folder "{source_folder_name}": {e}'
+        )
+        return False
+
+
 def get_file_url(bucket_name, object_name, region_name):
     """Get the public URL of a file in a bucket."""
     return f"https://{bucket_name}.s3.{region_name}.amazonaws.com/{object_name}"
@@ -706,3 +779,16 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+def safe_bucket_list(frog):
+
+    try:
+        return frog
+
+    except Exception as e:
+        print(e)
+        return []
+    
+    safe_bucket_list([bucket["Name"] for bucket in get_s3_client("us-east-1").list_buckets()["Buckets"]])
