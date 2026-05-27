@@ -10,17 +10,38 @@ logging.basicConfig(
 )
 
 
+def normalize_prefix(prefix):
+    if not prefix:
+        return ""
+
+    prefix = prefix.replace("\\", "/")
+
+    if not prefix.endswith("/"):
+        prefix += "/"
+
+    return prefix
+
+
 def get_s3_client(region="us-east-1"):
     try:
         client = boto3.client("s3", region_name=region)
         client.list_buckets()
+
+        logging.info(
+            f"Connected to AWS using local/default credentials in region {region}"
+        )
+
         return client
 
-    except (NoCredentialsError, PartialCredentialsError):
-        pass
+    except (NoCredentialsError, PartialCredentialsError) as e:
+        logging.warning(
+            f"Local/default AWS credentials not available: {e}"
+        )
 
-    except Exception:
-        pass
+    except Exception as e:
+        logging.error(
+            f"Failed local/default AWS connection attempt: {e}"
+        )
 
     try:
         client = boto3.client(
@@ -29,33 +50,74 @@ def get_s3_client(region="us-east-1"):
             aws_secret_access_key=st.secrets["AWS_SECRET_ACCESS_KEY"],
             region_name=st.secrets.get("AWS_DEFAULT_REGION", region),
         )
+
         client.list_buckets()
+
+        logging.info(
+            "Connected to AWS using Streamlit secrets credentials"
+        )
+
         return client
 
-    except Exception:
-        pass
+    except Exception as e:
+        logging.error(
+            f"Failed Streamlit secrets AWS connection attempt: {e}"
+        )
 
     st.warning("AWS credentials were not found. Enter credentials below.")
 
     with st.form("aws_credentials_form"):
         access_key = st.text_input("AWS Access Key ID")
-        secret_key = st.text_input("AWS Secret Access Key", type="password")
-        region = st.text_input("AWS Region", value="us-east-1")
-        submitted = st.form_submit_button("Connect to AWS")
+        secret_key = st.text_input(
+            "AWS Secret Access Key",
+            type="password",
+        )
+
+        region = st.text_input(
+            "AWS Region",
+            value="us-east-1",
+        )
+
+        submitted = st.form_submit_button(
+            "Connect to AWS"
+        )
 
     if submitted:
         st.session_state["aws_access_key_id"] = access_key
         st.session_state["aws_secret_access_key"] = secret_key
         st.session_state["aws_region"] = region
+
+        logging.info(
+            "AWS credentials stored in Streamlit session state"
+        )
+
         st.rerun()
 
     if "aws_access_key_id" in st.session_state:
-        return boto3.client(
-            "s3",
-            aws_access_key_id=st.session_state["aws_access_key_id"],
-            aws_secret_access_key=st.session_state["aws_secret_access_key"],
-            region_name=st.session_state["aws_region"],
-        )
+        try:
+            client = boto3.client(
+                "s3",
+                aws_access_key_id=st.session_state["aws_access_key_id"],
+                aws_secret_access_key=st.session_state[
+                    "aws_secret_access_key"
+                ],
+                region_name=st.session_state["aws_region"],
+            )
+
+            client.list_buckets()
+
+            logging.info(
+                "Connected to AWS using session state credentials"
+            )
+
+            return client
+
+        except Exception as e:
+            logging.error(
+                f"Failed session state AWS connection attempt: {e}"
+            )
+
+    logging.error("Unable to establish AWS S3 client connection")
 
     return None
 
@@ -80,7 +142,15 @@ def run_safely(action, default_return=None, error_message="Operation failed"):
 def create_bucket(bucket_name, region="us-east-1"):
     def action():
         client = get_s3_client(region)
-        client.create_bucket(Bucket=bucket_name)
+
+        if region == "us-east-1":
+            client.create_bucket(Bucket=bucket_name)
+        else:
+            client.create_bucket(
+                Bucket=bucket_name,
+                CreateBucketConfiguration={"LocationConstraint": region},
+            )
+
         return True
 
     return run_safely(
@@ -94,14 +164,11 @@ def create_folder(bucket_name, folder_name, region="us-east-1"):
     def action():
         client = get_s3_client(region)
 
-        if not folder_name.endswith("/"):
-            folder_name_key = folder_name + "/"
-        else:
-            folder_name_key = folder_name
+        folder_name_clean = normalize_prefix(folder_name)
 
         client.put_object(
             Bucket=bucket_name,
-            Key=folder_name_key,
+            Key=folder_name_clean,
         )
 
         return True
@@ -179,8 +246,9 @@ def exists_bucket(bucket_name, region="us-east-1"):
 
 def exists_folder(bucket_name, folder_name, region="us-east-1"):
     def action():
+        folder_name_clean = normalize_prefix(folder_name)
         folders = list_folders(bucket_name, region)
-        return folder_name in folders
+        return folder_name_clean in folders
 
     return run_safely(
         action,
@@ -220,9 +288,11 @@ def delete_folder(bucket_name, object_prefix, region="us-east-1"):
     def action():
         client = get_s3_client(region)
 
+        object_prefix_clean = normalize_prefix(object_prefix)
+
         response = client.list_objects_v2(
             Bucket=bucket_name,
-            Prefix=object_prefix,
+            Prefix=object_prefix_clean,
         )
 
         for obj in response.get("Contents", []):
@@ -284,9 +354,11 @@ def empty_folder(bucket_name, object_prefix, region="us-east-1"):
     def action():
         client = get_s3_client(region)
 
+        object_prefix_clean = normalize_prefix(object_prefix)
+
         response = client.list_objects_v2(
             Bucket=bucket_name,
-            Prefix=object_prefix,
+            Prefix=object_prefix_clean,
         )
 
         for obj in response.get("Contents", []):
@@ -306,6 +378,8 @@ def empty_folder(bucket_name, object_prefix, region="us-east-1"):
 
 def upload_folder(bucket_name, folder_path, object_prefix=None, region="us-east-1"):
     def action():
+        object_prefix_clean = normalize_prefix(object_prefix)
+
         for root, _, files in os.walk(folder_path):
             for file in files:
                 local_file_path = os.path.join(root, file)
@@ -315,9 +389,9 @@ def upload_folder(bucket_name, folder_path, object_prefix=None, region="us-east-
                     folder_path,
                 )
 
-                if object_prefix:
+                if object_prefix_clean:
                     object_name = os.path.join(
-                        object_prefix,
+                        object_prefix_clean,
                         relative_path,
                     )
                 else:
@@ -346,7 +420,9 @@ def upload_folder(bucket_name, folder_path, object_prefix=None, region="us-east-
 
 def upload_file(bucket_name, file_path, object_name=None, region="us-east-1"):
     if object_name is None:
-        object_name = file_path
+        object_name = os.path.basename(file_path)
+
+    object_name = object_name.replace("\\", "/")
 
     def action():
         client = get_s3_client(region)
@@ -370,9 +446,11 @@ def download_folder(bucket_name, object_prefix, folder_path, region="us-east-1")
     def action():
         client = get_s3_client(region)
 
+        object_prefix_clean = normalize_prefix(object_prefix)
+
         response = client.list_objects_v2(
             Bucket=bucket_name,
-            Prefix=object_prefix,
+            Prefix=object_prefix_clean,
         )
 
         for obj in response.get("Contents", []):
@@ -380,7 +458,7 @@ def download_folder(bucket_name, object_prefix, folder_path, region="us-east-1")
 
             local_file_path = os.path.join(
                 folder_path,
-                os.path.relpath(object_name, object_prefix),
+                os.path.relpath(object_name, object_prefix_clean),
             )
 
             downloaded = download_file(
@@ -442,18 +520,21 @@ def move_folder(
     def action():
         client = get_s3_client(region)
 
+        source_prefix_clean = normalize_prefix(source_prefix)
+        dest_prefix_clean = normalize_prefix(dest_prefix)
+
         response = client.list_objects_v2(
             Bucket=source_bucket,
-            Prefix=source_prefix,
+            Prefix=source_prefix_clean,
         )
 
         for obj in response.get("Contents", []):
             source_object = obj["Key"]
 
-            if dest_prefix:
+            if dest_prefix_clean:
                 dest_object = os.path.join(
-                    dest_prefix,
-                    os.path.relpath(source_object, source_prefix),
+                    dest_prefix_clean,
+                    os.path.relpath(source_object, source_prefix_clean),
                 ).replace("\\", "/")
             else:
                 dest_object = source_object
@@ -468,6 +549,7 @@ def move_folder(
 
             if not moved:
                 return False
+
         return True
 
     return run_safely(
@@ -525,18 +607,21 @@ def copy_folder(
     def action():
         client = get_s3_client(region)
 
+        source_prefix_clean = normalize_prefix(source_prefix)
+        dest_prefix_clean = normalize_prefix(dest_prefix)
+
         response = client.list_objects_v2(
             Bucket=source_bucket,
-            Prefix=source_prefix,
+            Prefix=source_prefix_clean,
         )
 
         for obj in response.get("Contents", []):
             source_object = obj["Key"]
 
-            if dest_prefix:
+            if dest_prefix_clean:
                 dest_object = os.path.join(
-                    dest_prefix,
-                    os.path.relpath(source_object, source_prefix),
+                    dest_prefix_clean,
+                    os.path.relpath(source_object, source_prefix_clean),
                 ).replace("\\", "/")
             else:
                 dest_object = source_object
@@ -557,7 +642,12 @@ def copy_folder(
     return run_safely(
         action,
         default_return=False,
-        error_message=f"Failed to copy folder {source_prefix} from bucket {source_bucket} to bucket {dest_bucket} with prefix {dest_prefix}",
+        error_message=(
+            f"Failed to copy folder {source_prefix} "
+            f"from bucket {source_bucket} "
+            f"to bucket {dest_bucket} "
+            f"with prefix {dest_prefix}"
+        ),
     )
 
 
