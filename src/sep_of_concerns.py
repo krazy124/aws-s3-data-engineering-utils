@@ -9,6 +9,8 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
+_S3_CLIENT_CACHE = {}
+
 
 def normalize_prefix(prefix):
     if not prefix:
@@ -60,22 +62,16 @@ def get_s3_client(region="us-east-1"):
 
     with st.form("aws_credentials_form"):
         access_key = st.text_input("AWS Access Key ID")
-        secret_key = st.text_input(
-            "AWS Secret Access Key",
-            type="password",
-        )
-
-        region = st.text_input(
-            "AWS Region",
-            value="us-east-1",
-        )
-
+        secret_key = st.text_input("AWS Secret Access Key", type="password")
+        region = st.text_input("AWS Region", value="us-east-1")
         submitted = st.form_submit_button("Connect to AWS")
 
     if submitted:
         st.session_state["aws_access_key_id"] = access_key
         st.session_state["aws_secret_access_key"] = secret_key
         st.session_state["aws_region"] = region
+
+        _S3_CLIENT_CACHE.clear()
 
         logging.info("AWS credentials stored in Streamlit session state")
 
@@ -104,6 +100,21 @@ def get_s3_client(region="us-east-1"):
     return None
 
 
+def get_active_s3_client(region="us-east-1", client=None):
+    if client is not None:
+        return client
+
+    if region in _S3_CLIENT_CACHE:
+        return _S3_CLIENT_CACHE[region]
+
+    new_client = get_s3_client(region)
+
+    if new_client is not None:
+        _S3_CLIENT_CACHE[region] = new_client
+
+    return new_client
+
+
 def run_safely(action, default_return=None, error_message="Operation failed"):
     try:
         return action()
@@ -123,7 +134,7 @@ def run_safely(action, default_return=None, error_message="Operation failed"):
 
 def create_bucket(bucket_name, region="us-east-1", client=None):
     def action():
-        s3_client = client or get_s3_client(region)
+        s3_client = get_active_s3_client(region, client)
 
         if region == "us-east-1":
             s3_client.create_bucket(Bucket=bucket_name)
@@ -144,14 +155,10 @@ def create_bucket(bucket_name, region="us-east-1", client=None):
 
 def create_folder(bucket_name, folder_name, region="us-east-1", client=None):
     def action():
-        s3_client = client or get_s3_client(region)
-
+        s3_client = get_active_s3_client(region, client)
         folder_name_clean = normalize_prefix(folder_name)
 
-        s3_client.put_object(
-            Bucket=bucket_name,
-            Key=folder_name_clean,
-        )
+        s3_client.put_object(Bucket=bucket_name, Key=folder_name_clean)
 
         return True
 
@@ -164,10 +171,8 @@ def create_folder(bucket_name, folder_name, region="us-east-1", client=None):
 
 def list_buckets(region="us-east-1", client=None):
     def action():
-        s3_client = client or get_s3_client(region)
-
+        s3_client = get_active_s3_client(region, client)
         response = s3_client.list_buckets()
-
         return [bucket["Name"] for bucket in response["Buckets"]]
 
     return run_safely(
@@ -179,8 +184,7 @@ def list_buckets(region="us-east-1", client=None):
 
 def list_folders(bucket_name, region="us-east-1", client=None):
     def action():
-        s3_client = client or get_s3_client(region)
-
+        s3_client = get_active_s3_client(region, client)
         response = s3_client.list_objects_v2(Bucket=bucket_name)
 
         folders = set()
@@ -203,10 +207,8 @@ def list_folders(bucket_name, region="us-east-1", client=None):
 
 def list_files(bucket_name, region="us-east-1", client=None):
     def action():
-        s3_client = client or get_s3_client(region)
-
+        s3_client = get_active_s3_client(region, client)
         response = s3_client.list_objects_v2(Bucket=bucket_name)
-
         return [obj["Key"] for obj in response.get("Contents", [])]
 
     return run_safely(
@@ -218,10 +220,8 @@ def list_files(bucket_name, region="us-east-1", client=None):
 
 def exists_bucket(bucket_name, region="us-east-1", client=None):
     def action():
-        s3_client = client or get_s3_client(region)
-
+        s3_client = get_active_s3_client(region, client)
         buckets = list_buckets(region=region, client=s3_client)
-
         return bucket_name in buckets
 
     return run_safely(
@@ -233,11 +233,9 @@ def exists_bucket(bucket_name, region="us-east-1", client=None):
 
 def exists_folder(bucket_name, folder_name, region="us-east-1", client=None):
     def action():
-        s3_client = client or get_s3_client(region)
-
+        s3_client = get_active_s3_client(region, client)
         folder_name_clean = normalize_prefix(folder_name)
         folders = list_folders(bucket_name, region=region, client=s3_client)
-
         return folder_name_clean in folders
 
     return run_safely(
@@ -249,10 +247,8 @@ def exists_folder(bucket_name, folder_name, region="us-east-1", client=None):
 
 def exists_file(bucket_name, object_name, region="us-east-1", client=None):
     def action():
-        s3_client = client or get_s3_client(region)
-
+        s3_client = get_active_s3_client(region, client)
         files = list_files(bucket_name, region=region, client=s3_client)
-
         return object_name in files
 
     return run_safely(
@@ -264,10 +260,8 @@ def exists_file(bucket_name, object_name, region="us-east-1", client=None):
 
 def delete_bucket(bucket_name, region="us-east-1", client=None):
     def action():
-        s3_client = client or get_s3_client(region)
-
+        s3_client = get_active_s3_client(region, client)
         s3_client.delete_bucket(Bucket=bucket_name)
-
         return True
 
     return run_safely(
@@ -279,8 +273,7 @@ def delete_bucket(bucket_name, region="us-east-1", client=None):
 
 def delete_folder(bucket_name, object_prefix, region="us-east-1", client=None):
     def action():
-        s3_client = client or get_s3_client(region)
-
+        s3_client = get_active_s3_client(region, client)
         object_prefix_clean = normalize_prefix(object_prefix)
 
         response = s3_client.list_objects_v2(
@@ -310,13 +303,8 @@ def delete_folder(bucket_name, object_prefix, region="us-east-1", client=None):
 
 def delete_file(bucket_name, object_name, region="us-east-1", client=None):
     def action():
-        s3_client = client or get_s3_client(region)
-
-        s3_client.delete_object(
-            Bucket=bucket_name,
-            Key=object_name,
-        )
-
+        s3_client = get_active_s3_client(region, client)
+        s3_client.delete_object(Bucket=bucket_name, Key=object_name)
         return True
 
     return run_safely(
@@ -328,15 +316,11 @@ def delete_file(bucket_name, object_name, region="us-east-1", client=None):
 
 def empty_bucket(bucket_name, region="us-east-1", client=None):
     def action():
-        s3_client = client or get_s3_client(region)
-
+        s3_client = get_active_s3_client(region, client)
         response = s3_client.list_objects_v2(Bucket=bucket_name)
 
         for obj in response.get("Contents", []):
-            s3_client.delete_object(
-                Bucket=bucket_name,
-                Key=obj["Key"],
-            )
+            s3_client.delete_object(Bucket=bucket_name, Key=obj["Key"])
 
         return True
 
@@ -349,8 +333,7 @@ def empty_bucket(bucket_name, region="us-east-1", client=None):
 
 def empty_folder(bucket_name, object_prefix, region="us-east-1", client=None):
     def action():
-        s3_client = client or get_s3_client(region)
-
+        s3_client = get_active_s3_client(region, client)
         object_prefix_clean = normalize_prefix(object_prefix)
 
         response = s3_client.list_objects_v2(
@@ -359,10 +342,7 @@ def empty_folder(bucket_name, object_prefix, region="us-east-1", client=None):
         )
 
         for obj in response.get("Contents", []):
-            s3_client.delete_object(
-                Bucket=bucket_name,
-                Key=obj["Key"],
-            )
+            s3_client.delete_object(Bucket=bucket_name, Key=obj["Key"])
 
         return True
 
@@ -381,8 +361,7 @@ def upload_folder(
     client=None,
 ):
     def action():
-        s3_client = client or get_s3_client(region)
-
+        s3_client = get_active_s3_client(region, client)
         object_prefix_clean = normalize_prefix(object_prefix)
 
         for root, _, files in os.walk(folder_path):
@@ -437,7 +416,7 @@ def upload_file(
     object_name = object_name.replace("\\", "/")
 
     def action():
-        s3_client = client or get_s3_client(region)
+        s3_client = get_active_s3_client(region, client)
 
         s3_client.upload_file(
             file_path,
@@ -462,8 +441,7 @@ def download_folder(
     client=None,
 ):
     def action():
-        s3_client = client or get_s3_client(region)
-
+        s3_client = get_active_s3_client(region, client)
         object_prefix_clean = normalize_prefix(object_prefix)
 
         response = s3_client.list_objects_v2(
@@ -513,12 +491,9 @@ def download_file(
         folder_name = os.path.dirname(file_path)
 
         if folder_name:
-            os.makedirs(
-                folder_name,
-                exist_ok=True,
-            )
+            os.makedirs(folder_name, exist_ok=True)
 
-        s3_client = client or get_s3_client(region)
+        s3_client = get_active_s3_client(region, client)
 
         s3_client.download_file(
             bucket_name,
@@ -544,7 +519,7 @@ def move_folder(
     client=None,
 ):
     def action():
-        s3_client = client or get_s3_client(region)
+        s3_client = get_active_s3_client(region, client)
 
         source_prefix_clean = normalize_prefix(source_prefix)
         dest_prefix_clean = normalize_prefix(dest_prefix)
@@ -603,7 +578,7 @@ def move_file(
         dest_object = source_object
 
     def action():
-        s3_client = client or get_s3_client(region)
+        s3_client = get_active_s3_client(region, client)
 
         s3_client.copy(
             {"Bucket": source_bucket, "Key": source_object},
@@ -634,7 +609,7 @@ def copy_folder(
     client=None,
 ):
     def action():
-        s3_client = client or get_s3_client(region)
+        s3_client = get_active_s3_client(region, client)
 
         source_prefix_clean = normalize_prefix(source_prefix)
         dest_prefix_clean = normalize_prefix(dest_prefix)
@@ -693,7 +668,7 @@ def copy_file(
         dest_object = source_object
 
     def action():
-        s3_client = client or get_s3_client(region)
+        s3_client = get_active_s3_client(region, client)
 
         s3_client.copy(
             {"Bucket": source_bucket, "Key": source_object},
