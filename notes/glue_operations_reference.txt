@@ -1,0 +1,379 @@
+============================================================
+GLUE OPERATIONS FUNCTION REFERENCE
+============================================================
+
+Purpose:
+This file documents the functions available in
+glue_operations.py and their intended use.
+
+============================================================
+1. CONNECTION FUNCTIONS
+============================================================
+
+get_glue_client()
+------------------------------------------------------------
+Creates and returns an AWS Glue client.
+
+Connection Priority:
+1. Local AWS credentials
+2. Streamlit secrets
+
+Returns:
+- Glue client object
+- None if connection fails
+
+
+get_active_glue_client()
+------------------------------------------------------------
+Returns a cached Glue client.
+
+Purpose:
+Avoids creating a new AWS connection every time a
+function is called.
+
+Returns:
+- Existing cached client
+- New client if one does not exist
+
+
+run_safely()
+------------------------------------------------------------
+Universal error handling wrapper.
+
+Purpose:
+Catches common AWS errors and returns a safe default
+value instead of crashing the application.
+
+Handles:
+- NoCredentialsError
+- ClientError
+- General Exceptions
+
+
+============================================================
+2. DATABASE FUNCTIONS
+============================================================
+
+list_glue_databases()
+------------------------------------------------------------
+Returns all Glue database names.
+
+Example:
+["olist_data_lake"]
+
+
+============================================================
+3. TABLE FUNCTIONS
+============================================================
+
+list_glue_tables()
+------------------------------------------------------------
+Returns all table names within a Glue database.
+
+Example:
+["customers", "orders", "payments"]
+
+
+get_glue_table()
+------------------------------------------------------------
+Returns the complete Glue table object.
+
+Use When:
+You need all metadata associated with a table.
+
+
+get_table_schema()
+------------------------------------------------------------
+Returns only the table's column definitions.
+
+Example:
+
+[
+    {
+        "Name": "customer_id",
+        "Type": "string"
+    }
+]
+
+
+get_table_metadata_summary()
+------------------------------------------------------------
+Returns a simplified metadata summary.
+
+Includes:
+- Table name
+- Database name
+- Location
+- Classification
+- Formats
+- Creation date
+- Update date
+
+
+get_full_table_info()
+------------------------------------------------------------
+Returns the complete raw table object exactly as
+stored in the Glue Data Catalog.
+
+
+============================================================
+4. CRAWLER FUNCTIONS
+============================================================
+
+list_glue_crawlers()
+------------------------------------------------------------
+Returns all crawler names.
+
+Example:
+
+[
+    "olist-customers-crawler",
+    "olist-orders-crawler",
+    "olist-payments-crawler"
+]
+
+
+get_crawler_info()
+------------------------------------------------------------
+Returns the full crawler configuration.
+
+Includes:
+- Targets
+- IAM Role
+- Database
+- Last Crawl
+- Policies
+- Settings
+
+
+get_crawler_status()
+------------------------------------------------------------
+Returns current crawler status.
+
+Possible Values:
+- READY
+- RUNNING
+- STOPPING
+
+
+start_crawler()
+------------------------------------------------------------
+Starts a crawler execution.
+
+
+wait_for_crawler()
+------------------------------------------------------------
+Monitors a crawler until it finishes.
+
+Process:
+1. Check status
+2. Wait
+3. Check again
+4. Continue until READY
+
+
+run_crawler_workflow()
+------------------------------------------------------------
+Complete crawler automation workflow.
+
+Process:
+1. Verify crawler exists
+2. Check current status
+3. Start crawler if needed
+4. Wait until finished
+5. Return success/failure
+
+Purpose:
+Acts as a "one-button crawler execution" function.
+
+
+============================================================
+5. GLUE JOB FUNCTIONS
+============================================================
+
+list_glue_jobs()
+------------------------------------------------------------
+Returns all Glue job names.
+
+
+get_glue_job_info()
+------------------------------------------------------------
+Returns a Glue job's configuration.
+
+
+start_glue_job()
+------------------------------------------------------------
+Starts a Glue job.
+
+Returns:
+- JobRunId
+
+
+get_glue_job_run()
+------------------------------------------------------------
+Returns detailed information about a specific
+job execution.
+
+
+get_glue_job_status()
+------------------------------------------------------------
+Returns the current state of a Glue job run.
+
+Possible Values:
+- STARTING
+- RUNNING
+- SUCCEEDED
+- FAILED
+- STOPPED
+
+
+stop_glue_job_run()
+------------------------------------------------------------
+Stops a running Glue job.
+
+
+============================================================
+6. PRINT / DISPLAY FUNCTIONS
+============================================================
+
+print_glue_databases()
+------------------------------------------------------------
+Displays all Glue databases in a readable format.
+
+
+print_glue_tables()
+------------------------------------------------------------
+Displays all tables in a database.
+
+
+print_table_schema()
+------------------------------------------------------------
+Displays table column names and data types.
+
+
+print_table_metadata_summary()
+------------------------------------------------------------
+Displays a simplified metadata report.
+
+
+print_table_details()
+------------------------------------------------------------
+Displays complete table information.
+
+Includes:
+- General Information
+- Storage Information
+- Columns
+- Partition Keys
+- Parameters
+- Full Raw JSON Object
+
+Purpose:
+Deep inspection and troubleshooting.
+
+
+============================================================
+7. DIAGNOSTIC FUNCTIONS
+============================================================
+
+inspect_csv_header_from_s3()
+------------------------------------------------------------
+Reads the first portion of a CSV file directly
+from S3.
+
+Useful For:
+- Header validation
+- Delimiter verification
+- Data preview
+- Troubleshooting crawler issues
+
+
+print_crawler_log_events()
+------------------------------------------------------------
+Reads CloudWatch logs for a crawler.
+
+Useful For:
+- Diagnosing crawler failures
+- Permission issues
+- Classification problems
+- Catalog update issues
+
+Example Discovery:
+This function identified the IAM permission
+problem that prevented the orders and payments
+tables from being created.
+
+
+============================================================
+8. MODULE ARCHITECTURE
+============================================================
+
+Connection
+│
+├── get_glue_client()
+├── get_active_glue_client()
+└── run_safely()
+
+
+Database / Catalog
+│
+├── list_glue_databases()
+├── list_glue_tables()
+├── get_glue_table()
+├── get_table_schema()
+├── get_table_metadata_summary()
+└── get_full_table_info()
+
+
+Crawler Operations
+│
+├── list_glue_crawlers()
+├── get_crawler_info()
+├── get_crawler_status()
+├── start_crawler()
+├── wait_for_crawler()
+└── run_crawler_workflow()
+
+
+Glue Job Operations
+│
+├── list_glue_jobs()
+├── get_glue_job_info()
+├── start_glue_job()
+├── get_glue_job_run()
+├── get_glue_job_status()
+└── stop_glue_job_run()
+
+
+Diagnostics
+│
+├── inspect_csv_header_from_s3()
+├── print_crawler_log_events()
+└── print_table_details()
+
+
+============================================================
+CURRENT STATUS
+============================================================
+
+Validated and Working:
+✓ Glue Connection
+✓ Database Listing
+✓ Table Listing
+✓ Table Metadata
+✓ Table Schema Retrieval
+✓ Crawler Listing
+✓ Crawler Inspection
+✓ Crawler Execution
+✓ Crawler Monitoring
+✓ CloudWatch Log Inspection
+✓ IAM Permission Troubleshooting
+
+Current Tables:
+- customers
+- orders
+- payments
+
+Project Stage:
+Glue Catalog and Crawler Operations Verified
+============================================================
