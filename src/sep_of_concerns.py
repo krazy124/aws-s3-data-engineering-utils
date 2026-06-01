@@ -685,5 +685,24 @@ def copy_file(
     )
 
 
+def list_files_in_prefix(bucket_name, prefix, region="us-east-1", client=None):
+    def action():
+        s3_client = get_active_s3_client(region, client)
+        prefix_clean = normalize_prefix(prefix)
+
+        response = s3_client.list_objects_v2(
+            Bucket=bucket_name,
+            Prefix=prefix_clean,
+        )
+
+        return [obj["Key"] for obj in response.get("Contents", [])]
+
+    return run_safely(
+        action,
+        default_return=[],
+        error_message=f"Failed to list files in {prefix} from bucket {bucket_name}",
+    )
+
+
 if __name__ == "__main__":
     print(list_buckets())

@@ -3,6 +3,10 @@ import logging
 import boto3
 import streamlit as st
 from botocore.exceptions import ClientError, NoCredentialsError, PartialCredentialsError
+import pprint
+import json
+from sep_of_concerns import list_files_in_prefix
+import time
 
 logging.basicConfig(
     level=logging.INFO,
@@ -122,6 +126,77 @@ def list_glue_tables(database_name, region="us-east-1", client=None):
     )
 
 
+def get_glue_table(database_name, table_name, region="us-east-1", client=None):
+    def action():
+        glue_client = get_active_glue_client(region, client)
+
+        response = glue_client.get_table(
+            DatabaseName=database_name,
+            Name=table_name,
+        )
+
+        return response.get("Table", {})
+
+    return run_safely(
+        action,
+        default_return={},
+        error_message=f"Failed to get Glue table {table_name}",
+    )
+
+
+def get_table_schema(database_name, table_name, region="us-east-1", client=None):
+    def action():
+        table = get_glue_table(
+            database_name,
+            table_name,
+            region=region,
+            client=client,
+        )
+
+        storage = table.get("StorageDescriptor", {})
+
+        return storage.get("Columns", [])
+
+    return run_safely(
+        action,
+        default_return=[],
+        error_message=f"Failed to get schema for table {table_name}",
+    )
+
+
+def get_table_metadata_summary(database_name, table_name, region="us-east-1", client=None):
+    def action():
+        table = get_glue_table(
+            database_name,
+            table_name,
+            region=region,
+            client=client,
+        )
+
+        storage = table.get("StorageDescriptor", {})
+        serde = storage.get("SerdeInfo", {})
+        parameters = table.get("Parameters", {})
+
+        return {
+            "table_name": table.get("Name"),
+            "database_name": table.get("DatabaseName"),
+            "location": storage.get("Location"),
+            "input_format": storage.get("InputFormat"),
+            "output_format": storage.get("OutputFormat"),
+            "serde_library": serde.get("SerializationLibrary"),
+            "classification": parameters.get("classification"),
+            "columns": storage.get("Columns", []),
+            "created_time": table.get("CreateTime"),
+            "updated_time": table.get("UpdateTime"),
+        }
+
+    return run_safely(
+        action,
+        default_return={},
+        error_message=f"Failed to summarize metadata for table {table_name}",
+    )
+
+
 def list_glue_crawlers(region="us-east-1", client=None):
     def action():
         glue_client = get_active_glue_client(region, client)
@@ -188,6 +263,51 @@ def get_crawler_status(crawler_name, region="us-east-1", client=None):
         default_return=None,
         error_message=f"Failed to get crawler status for {crawler_name}",
     )
+
+
+def run_crawler_workflow(crawler_name, region="us-east-1", client=None):
+    print("\n" + "=" * 70)
+    print(f"CRAWLER WORKFLOW: {crawler_name}")
+    print("=" * 70)
+
+    print("\nChecking crawler info...")
+    crawler_info = get_crawler_info(crawler_name, region, client)
+
+    if not crawler_info:
+        print("Crawler not found or could not be accessed.")
+        return False
+
+    current_status = get_crawler_status(crawler_name, region, client)
+    print(f"Current Status: {current_status}")
+
+    if current_status == "RUNNING":
+        print("Crawler is already running. Waiting for it to finish...")
+    else:
+        print("\nStarting crawler...")
+        started = start_crawler(crawler_name, region, client)
+
+        if not started:
+            print("Crawler failed to start.")
+            return False
+
+    print("\nWaiting for crawler to finish...")
+
+    max_attempts = 60
+    delay_seconds = 5
+
+    for attempt in range(max_attempts):
+        status = get_crawler_status(crawler_name, region, client)
+
+        print(f"Attempt {attempt + 1}: {crawler_name} status = {status}")
+
+        if status == "READY":
+            print(f"\nCrawler finished: {crawler_name}")
+            return True
+
+        time.sleep(delay_seconds)
+
+    print(f"\nCrawler timed out: {crawler_name}")
+    return False
 
 
 def list_glue_jobs(region="us-east-1", client=None):
@@ -303,5 +423,232 @@ def stop_glue_job_run(job_name, job_run_id, region="us-east-1", client=None):
     )
 
 
+def get_full_table_info(database_name, table_name, region="us-east-1", client=None):
+    table = get_glue_table(
+        database_name,
+        table_name,
+        region=region,
+        client=client,
+    )
+
+    return table
+
+
+def print_glue_databases(region="us-east-1", client=None):
+    databases = list_glue_databases(region, client)
+
+    print("\nGlue Databases")
+    print("-" * 40)
+
+    if not databases:
+        print("No Glue databases found.")
+        return
+
+    for index, database in enumerate(databases, start=1):
+        print(f"{index}. {database}")
+
+
+def print_glue_tables(database_name, region="us-east-1", client=None):
+    tables = list_glue_tables(database_name, region, client)
+
+    print(f"\nGlue Tables in Database: {database_name}")
+    print("-" * 40)
+
+    if not tables:
+        print("No Glue tables found.")
+        return
+
+    for index, table in enumerate(tables, start=1):
+        print(f"{index}. {table}")
+
+
+def print_table_schema(database_name, table_name, region="us-east-1", client=None):
+    schema = get_table_schema(database_name, table_name, region, client)
+
+    print(f"\nSchema for Table: {table_name}")
+    print("-" * 60)
+
+    if not schema:
+        print("No schema found.")
+        return
+
+    for column in schema:
+        name = column.get("Name", "Unknown")
+        data_type = column.get("Type", "Unknown")
+        print(f"{name:<35} {data_type}")
+
+
+def print_table_metadata_summary(database_name, table_name, region="us-east-1", client=None):
+    metadata = get_table_metadata_summary(database_name, table_name, region, client)
+
+    print(f"\nMetadata Summary for Table: {table_name}")
+    print("-" * 60)
+
+    if not metadata:
+        print("No metadata found.")
+        return
+
+    print(f"Table Name:      {metadata.get('table_name')}")
+    print(f"Database Name:   {metadata.get('database_name')}")
+    print(f"Location:        {metadata.get('location')}")
+    print(f"Classification:  {metadata.get('classification')}")
+    print(f"Serde Library:   {metadata.get('serde_library')}")
+    print(f"Input Format:    {metadata.get('input_format')}")
+    print(f"Output Format:   {metadata.get('output_format')}")
+    print(f"Created Time:    {metadata.get('created_time')}")
+    print(f"Updated Time:    {metadata.get('updated_time')}")
+
+
+def print_table_details(database_name, table_name, region="us-east-1", client=None):
+    table = get_glue_table(database_name, table_name, region, client)
+    storage = table.get("StorageDescriptor", {})
+    serde = storage.get("SerdeInfo", {})
+    columns = storage.get("Columns", [])
+    partition_keys = table.get("PartitionKeys", [])
+    parameters = table.get("Parameters", {})
+
+    print("\n" + "=" * 70)
+    print("TABLE INFORMATION")
+    print("=" * 70)
+    print(f"Name:          {table.get('Name')}")
+    print(f"Database:      {table.get('DatabaseName')}")
+    print(f"Table Type:    {table.get('TableType')}")
+    print(f"Owner:         {table.get('Owner')}")
+    print(f"Created:       {table.get('CreateTime')}")
+    print(f"Updated:       {table.get('UpdateTime')}")
+
+    print("\n" + "=" * 70)
+    print("STORAGE INFORMATION")
+    print("=" * 70)
+    print(f"Location:      {storage.get('Location')}")
+    print(f"Input Format:  {storage.get('InputFormat')}")
+    print(f"Output Format: {storage.get('OutputFormat')}")
+    print(f"Serde Name:    {serde.get('Name')}")
+    print(f"Serde Library: {serde.get('SerializationLibrary')}")
+
+    print("\n" + "=" * 70)
+    print("COLUMNS")
+    print("=" * 70)
+
+    if columns:
+        for column in columns:
+            print(f"{column.get('Name'):<35} {column.get('Type')}")
+    else:
+        print("No columns found.")
+
+    print("\n" + "=" * 70)
+    print("PARTITION KEYS")
+    print("=" * 70)
+
+    if partition_keys:
+        for partition in partition_keys:
+            print(f"{partition.get('Name'):<35} {partition.get('Type')}")
+    else:
+        print("No partition keys defined.")
+
+    print("\n" + "=" * 70)
+    print("PARAMETERS")
+    print("=" * 70)
+
+    if parameters:
+        for key, value in parameters.items():
+            print(f"{key:<35} {value}")
+    else:
+        print("No parameters found.")
+
+    print("\n" + "=" * 70)
+    print("FULL RAW TABLE OBJECT")
+    print("=" * 70)
+    print(json.dumps(table, indent=4, default=str))
+
+
+def inspect_csv_header_from_s3(bucket_name, object_key, region="us-east-1"):
+    def action():
+        s3_client = boto3.client("s3", region_name=region)
+
+        response = s3_client.get_object(
+            Bucket=bucket_name,
+            Key=object_key,
+            Range="bytes=0-2000",
+        )
+
+        content = response["Body"].read().decode("utf-8", errors="replace")
+
+        print("\n" + "=" * 70)
+        print(f"CSV PREVIEW: {object_key}")
+        print("=" * 70)
+        print(content)
+
+        return content
+
+    return run_safely(
+        action,
+        default_return="",
+        error_message=f"Failed to inspect CSV file {object_key}",
+    )
+
+
+def print_crawler_log_events(crawler_name, region="us-east-1"):
+    logs_client = boto3.client("logs", region_name=region)
+
+    response = logs_client.get_log_events(
+        logGroupName="/aws-glue/crawlers",
+        logStreamName=crawler_name,
+        limit=50,
+        startFromHead=False,
+    )
+
+    print("\n" + "=" * 70)
+    print(f"LOG EVENTS FOR: {crawler_name}")
+    print("=" * 70)
+
+    for event in response.get("events", []):
+        print(event.get("message"))
+
+
+def wait_for_crawler(
+    crawler_name,
+    region="us-east-1",
+    client=None,
+    delay=5,
+    max_attempts=60,
+):
+    for attempt in range(max_attempts):
+
+        status = get_crawler_status(
+            crawler_name,
+            region=region,
+            client=client,
+        )
+
+        print(
+            f"Attempt {attempt + 1}: "
+            f"{crawler_name} = {status}"
+        )
+
+        if status == "READY":
+            print(f"{crawler_name} finished.")
+            return True
+
+        time.sleep(delay)
+
+    print(f"{crawler_name} timed out.")
+    return False
+
+
 if __name__ == "__main__":
-    print(list_glue_databases())
+
+    database = "olist_data_lake"
+
+    print("\n" + "=" * 70)
+    print("STARTING CRAWLERS")
+    print("=" * 70)
+
+    run_crawler_workflow("olist-orders-crawler")
+    run_crawler_workflow("olist-payments-crawler")
+
+    print("\n" + "=" * 70)
+    print("UPDATED TABLES")
+    print("=" * 70)
+
+    print_glue_tables(database)
