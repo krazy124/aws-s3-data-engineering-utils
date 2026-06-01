@@ -638,17 +638,8 @@ def wait_for_crawler(
 
 if __name__ == "__main__":
 
-    database = "olist_data_lake"
+    tables_list = list_glue_tables("olist_data_lake")
 
-    print("\n" + "=" * 70)
-    print("STARTING CRAWLERS")
-    print("=" * 70)
-
-    run_crawler_workflow("olist-orders-crawler")
-    run_crawler_workflow("olist-payments-crawler")
-
-    print("\n" + "=" * 70)
-    print("UPDATED TABLES")
-    print("=" * 70)
-
-    print_glue_tables(database)
+    for table_name in tables_list:
+        table_schema = get_table_metadata_summary("olist_data_lake", table_name, region="us-east-1")
+        print(f"Table name: {table_name} Location: {table_schema.get('location')}")
