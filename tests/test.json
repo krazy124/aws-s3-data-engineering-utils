@@ -1,0 +1,89 @@
+{
+    "Name": "customers",
+    "DatabaseName": "olist_data_lake",
+    "Owner": "owner",
+    "CreateTime": "2026-05-28 17:53:09-05:00",
+    "UpdateTime": "2026-05-28 17:53:09-05:00",
+    "LastAccessTime": "2026-05-28 17:53:09-05:00",
+    "Retention": 0,
+    "StorageDescriptor": {
+        "Columns": [
+            {
+                "Name": "customer_id",
+                "Type": "string"
+            },
+            {
+                "Name": "customer_unique_id",
+                "Type": "string"
+            },
+            {
+                "Name": "customer_zip_code_prefix",
+                "Type": "bigint"
+            },
+            {
+                "Name": "customer_city",
+                "Type": "string"
+            },
+            {
+                "Name": "customer_state",
+                "Type": "string"
+            }
+        ],
+        "Location": "s3://wlmdatawizard-data-lake-873851887650-us-east-1-an/raw/olist/customers/",
+        "InputFormat": "org.apache.hadoop.mapred.TextInputFormat",
+        "OutputFormat": "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat",
+        "Compressed": false,
+        "NumberOfBuckets": -1,
+        "SerdeInfo": {
+            "SerializationLibrary": "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe",
+            "Parameters": {
+                "field.delim": ","
+            }
+        },
+        "BucketColumns": [],
+        "SortColumns": [],
+        "Parameters": {
+            "skip.header.line.count": "1",
+            "sizeKey": "9033957",
+            "objectCount": "1",
+            "UPDATED_BY_CRAWLER": "olist-customers-crawler",
+            "recordCount": "96105",
+            "CrawlerSchemaSerializerVersion": "1.0",
+            "averageRecordSize": "94",
+            "compressionType": "none",
+            "CrawlerSchemaDeserializerVersion": "1.0",
+            "classification": "csv",
+            "columnsOrdered": "true",
+            "delimiter": ",",
+            "areColumnsQuoted": "false",
+            "CRAWL_RUN_ID": "1f451971-f1bc-4a8a-85eb-5cb7ad34c5b4",
+            "typeOfData": "file"
+        },
+        "StoredAsSubDirectories": false
+    },
+    "PartitionKeys": [],
+    "TableType": "EXTERNAL_TABLE",
+    "Parameters": {
+        "skip.header.line.count": "1",
+        "sizeKey": "9033957",
+        "objectCount": "1",
+        "UPDATED_BY_CRAWLER": "olist-customers-crawler",
+        "recordCount": "96105",
+        "CrawlerSchemaSerializerVersion": "1.0",
+        "averageRecordSize": "94",
+        "compressionType": "none",
+        "CrawlerSchemaDeserializerVersion": "1.0",
+        "classification": "csv",
+        "columnsOrdered": "true",
+        "delimiter": ",",
+        "areColumnsQuoted": "false",
+        "CRAWL_RUN_ID": "1f451971-f1bc-4a8a-85eb-5cb7ad34c5b4",
+        "typeOfData": "file"
+    },
+    "CreatedBy": "arn:aws:sts::873851887650:assumed-role/AWSGlueServiceRole-OlistCrawler/AWS-Crawler",
+    "IsRegisteredWithLakeFormation": false,
+    "CatalogId": "873851887650",
+    "VersionId": "0",
+    "IsMultiDialectView": false,
+    "IsMaterializedView": false
+}

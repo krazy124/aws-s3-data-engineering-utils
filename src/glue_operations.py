@@ -640,6 +640,5 @@ if __name__ == "__main__":
 
     tables_list = list_glue_tables("olist_data_lake")
 
-    for table_name in tables_list:
-        table_schema = get_table_metadata_summary("olist_data_lake", table_name, region="us-east-1")
-        print(f"Table name: {table_name} Location: {table_schema.get('location')}")
+    table_metadata = get_glue_table("olist_data_lake", tables_list[0], region="us-east-1")
+    print(json.dumps(table_metadata, indent=4, default=str))
