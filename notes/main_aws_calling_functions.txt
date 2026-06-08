@@ -1,0 +1,28 @@
+
+The main AWS-calling functions in your file are:
+
+get_glue_client()             = boto3.client("glue")
+list_glue_databases()         = glue_client.get_databases()
+list_glue_tables()            = glue_client.get_tables()
+get_glue_table()              = glue_client.get_table()
+list_glue_crawlers()          = glue_client.list_crawlers()
+get_crawler_info()            = glue_client.get_crawler()
+start_crawler()               = glue_client.start_crawler()
+list_glue_jobs()              = glue_client.list_jobs()
+get_glue_job_info()           = glue_client.get_job()
+start_glue_job()              = glue_client.start_job_run()
+get_glue_job_run()            = glue_client.get_job_run()
+stop_glue_job_run()           = glue_client.batch_stop_job_run()
+inspect_csv_header_from_s3()  = s3_client.get_object()
+print_crawler_log_events()    = logs_client.get_log_events()
+
+The main “processing/wrapper” functions are:
+
+get_table_schema()            = calls get_glue_table(), extracts StorageDescriptor.Columns
+get_table_metadata_summary()  = calls get_glue_table(), extracts selected fields
+get_crawler_status()          = calls get_crawler_info(), extracts State
+get_glue_job_status()         = calls get_glue_job_run(), extracts JobRunState
+run_crawler_workflow()        = combines crawler info/start/status/wait
+print_table_summary_report()  = calls get_glue_table(), formats useful metadata
+print_flat_metadata()         = formats nested objects into dot-path output
+

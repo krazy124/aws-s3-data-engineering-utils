@@ -270,3 +270,64 @@ Example:
     "IsMultiDialectView": false,
     "IsMaterializedView": false
 }
+
+Flattened:
+ 
+Name = customers
+DatabaseName = olist_data_lake
+Owner = owner
+CreateTime = 2026-05-28 17:53:09-05:00
+UpdateTime = 2026-05-28 17:53:09-05:00
+LastAccessTime = 2026-05-28 17:53:09-05:00
+Retention = 0
+TableType = EXTERNAL_TABLE
+CreatedBy = arn:aws:sts::873851887650:assumed-role/AWSGlueServiceRole-OlistCrawler/AWS-Crawler
+IsRegisteredWithLakeFormation = False
+CatalogId = 873851887650
+VersionId = 0
+IsMultiDialectView = False
+IsMaterializedView = False
+StorageDescriptor.Location = s3://wlmdatawizard-data-lake-873851887650-us-east-1-an/raw/olist/customers/
+StorageDescriptor.InputFormat = org.apache.hadoop.mapred.TextInputFormat
+StorageDescriptor.OutputFormat = org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat
+StorageDescriptor.Compressed = False
+StorageDescriptor.NumberOfBuckets = -1
+StorageDescriptor.StoredAsSubDirectories = False
+StorageDescriptor.Columns[0].Name = customer_id
+StorageDescriptor.Columns[0].Type = string
+StorageDescriptor.Columns[1].Name = customer_unique_id
+StorageDescriptor.Columns[1].Type = string
+StorageDescriptor.Columns[2].Name = customer_zip_code_prefix
+StorageDescriptor.Columns[2].Type = bigint
+StorageDescriptor.Columns[3].Name = customer_city
+StorageDescriptor.Columns[3].Type = string
+StorageDescriptor.Columns[4].Name = customer_state
+StorageDescriptor.Columns[4].Type = string
+StorageDescriptor.SerdeInfo.SerializationLibrary = org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe
+StorageDescriptor.SerdeInfo.Parameters.field.delim = ,
+StorageDescriptor.Parameters.skip.header.line.count = 1
+StorageDescriptor.Parameters.sizeKey = 9033957
+StorageDescriptor.Parameters.objectCount = 1
+StorageDescriptor.Parameters.UPDATED_BY_CRAWLER = olist-customers-crawler
+StorageDescriptor.Parameters.recordCount = 96105
+StorageDescriptor.Parameters.averageRecordSize = 94
+StorageDescriptor.Parameters.compressionType = none
+StorageDescriptor.Parameters.classification = csv
+StorageDescriptor.Parameters.columnsOrdered = true
+StorageDescriptor.Parameters.delimiter = ,
+StorageDescriptor.Parameters.areColumnsQuoted = false
+StorageDescriptor.Parameters.CRAWL_RUN_ID =1f451971-f1bc-4a8a-85eb-5cb7ad34c5b4
+StorageDescriptor.Parameters.typeOfData = file
+Parameters.skip.header.line.count = 1
+Parameters.sizeKey = 9033957
+Parameters.objectCount = 1
+Parameters.UPDATED_BY_CRAWLER = olist-customers-crawler
+Parameters.recordCount = 96105
+Parameters.averageRecordSize = 94
+Parameters.compressionType = none
+Parameters.classification = csv
+Parameters.columnsOrdered = true
+Parameters.delimiter = ,
+Parameters.areColumnsQuoted = false
+Parameters.CRAWL_RUN_ID = 1f451971-f1bc-4a8a-85eb-5cb7ad34c5b4
+Parameters.typeOfData = file

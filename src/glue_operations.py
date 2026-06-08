@@ -1,4 +1,5 @@
 import logging
+from urllib import response
 
 import boto3
 import streamlit as st
@@ -7,6 +8,8 @@ import pprint
 import json
 from sep_of_concerns import list_files_in_prefix
 import time
+from datetime import datetime
+from athena_operations import count_table_rows, get_active_athena_client
 
 logging.basicConfig(
     level=logging.INFO,
@@ -14,6 +17,8 @@ logging.basicConfig(
 )
 
 _GLUE_CLIENT_CACHE = {}
+
+dbName = "olist_data_lake"
 
 
 def get_glue_client(region="us-east-1"):
@@ -110,30 +115,28 @@ def list_glue_tables(database_name, region="us-east-1", client=None):
     def action():
         glue_client = get_active_glue_client(region, client)
 
-        response = glue_client.get_tables(
-            DatabaseName=database_name,
-        )
+        response = glue_client.get_tables(DatabaseName=database_name,)
 
         return [
             table["Name"]
             for table in response.get("TableList", [])
         ]
 
-    return run_safely(
-        action,
-        default_return=[],
-        error_message=f"Failed to list Glue tables in database {database_name}",
-    )
+    return run_safely(action, default_return=[], error_message=f"Failed to list Glue tables in database {database_name}",)
+
+
+def test():
+
+    response = get_glue_client("us-east-1").get_tables(DatabaseName="olist_data_lake")
+    print(response.keys())
+    print(response["TableList"][0]["Name"])
 
 
 def get_glue_table(database_name, table_name, region="us-east-1", client=None):
     def action():
         glue_client = get_active_glue_client(region, client)
 
-        response = glue_client.get_table(
-            DatabaseName=database_name,
-            Name=table_name,
-        )
+        response = glue_client.get_table(DatabaseName=database_name, Name=table_name,)
 
         return response.get("Table", {})
 
@@ -562,9 +565,37 @@ def print_table_details(database_name, table_name, region="us-east-1", client=No
     print(json.dumps(table, indent=4, default=str))
 
 
-def inspect_csv_header_from_s3(bucket_name, object_key, region="us-east-1"):
+def print_table_summary_report(database_name, table_name, region="us-east-1", client=None):
+    table_metadata = get_glue_table(
+        database_name,
+        table_name,
+        region=region,
+        client=client,
+    )
+
+    parameters = table_metadata.get("Parameters", {})
+    storage = table_metadata.get("StorageDescriptor", {})
+
+    print("\n" + "=" * 70)
+    print(f"TABLE SUMMARY: {table_name}")
+    print("=" * 70)
+
+    print(f"Table Name:           {table_metadata.get('Name')}")
+    print(f"Record Count:         {parameters.get('recordCount', 'N/A')}")
+    print(f"Size:                 {parameters.get('sizeKey', 'N/A')}")
+    print(f"Average Record Size:  {parameters.get('averageRecordSize', 'N/A')}")
+    print(f"Classification:       {parameters.get('classification', 'N/A')}")
+    print(f"Location:             {storage.get('Location', 'N/A')}")
+    print(f"Updated Time:         {table_metadata.get('UpdateTime', 'N/A')}")
+
+
+def inspect_csv_header_from_s3(bucket_name, object_key, region="us-east-1", client=None):
     def action():
-        s3_client = boto3.client("s3", region_name=region)
+        s3_client = (
+            client
+            if client is not None
+            else boto3.client("s3", region_name=region)
+        )
 
         response = s3_client.get_object(
             Bucket=bucket_name,
@@ -572,7 +603,10 @@ def inspect_csv_header_from_s3(bucket_name, object_key, region="us-east-1"):
             Range="bytes=0-2000",
         )
 
-        content = response["Body"].read().decode("utf-8", errors="replace")
+        content = response["Body"].read().decode(
+            "utf-8",
+            errors="replace",
+        )
 
         print("\n" + "=" * 70)
         print(f"CSV PREVIEW: {object_key}")
@@ -588,38 +622,43 @@ def inspect_csv_header_from_s3(bucket_name, object_key, region="us-east-1"):
     )
 
 
-def print_crawler_log_events(crawler_name, region="us-east-1"):
-    logs_client = boto3.client("logs", region_name=region)
+def print_crawler_log_events(crawler_name, region="us-east-1", client=None):
 
-    response = logs_client.get_log_events(
-        logGroupName="/aws-glue/crawlers",
-        logStreamName=crawler_name,
-        limit=50,
-        startFromHead=False,
-    )
+    def action():
+        logs_client = (client if client is not None else boto3.client("logs", region_name=region))
 
-    print("\n" + "=" * 70)
-    print(f"LOG EVENTS FOR: {crawler_name}")
-    print("=" * 70)
+        response = logs_client.get_log_events(logGroupName="/aws-glue/crawlers", logStreamName=crawler_name, limit=50, startFromHead=False, )
 
-    for event in response.get("events", []):
-        print(event.get("message"))
+        print("\n" + "=" * 70)
+        print(f"LOG EVENTS FOR: {crawler_name}")
+        print("=" * 70)
+
+        for event in response.get("events", []):
+            print(event.get("message"))
+
+        return response.get("events", [])
+
+    return run_safely(action, default_return=[], error_message=f"Failed to print crawler log events for {crawler_name}", )
 
 
-def wait_for_crawler(
-    crawler_name,
-    region="us-east-1",
-    client=None,
-    delay=5,
-    max_attempts=60,
-):
+def print_flat_metadata(data, prefix=""):
+    if isinstance(data, dict):
+        for key, value in data.items():
+            new_prefix = f"{prefix}.{key}" if prefix else key
+            print_flat_metadata(value, new_prefix)
+
+    elif isinstance(data, list):
+        for index, item in enumerate(data):
+            new_prefix = f"{prefix}[{index}]"
+            print_flat_metadata(item, new_prefix)
+
+    else:
+        print(f"{prefix} = {data}")
+
+
+def wait_for_crawler(crawler_name, region="us-east-1", client=None, delay=5, max_attempts=60, ):
     for attempt in range(max_attempts):
-
-        status = get_crawler_status(
-            crawler_name,
-            region=region,
-            client=client,
-        )
+        status = get_crawler_status(crawler_name, region=region, client=client, )
 
         print(
             f"Attempt {attempt + 1}: "
@@ -636,9 +675,87 @@ def wait_for_crawler(
     return False
 
 
+def get_table_row_count(database_name, table_name, region="us-east-1", client=None, ):
+    def action():
+        glue_client = get_active_glue_client(region, client, )
+
+        response = glue_client.get_table(DatabaseName=database_name, Name=table_name, )
+
+        return int(response["Table"] .get("Parameters", {}) .get("recordCount", 0))
+
+    return run_safely(action, default_return=0, error_message=f"Failed to get row count for {table_name}", )
+
+
+def mini_glue_dahsboard():
+    tables_list = list_glue_tables(dbName)
+    crawlers_list = list_glue_crawlers()
+    total_tables = len(tables_list)
+    total_crawlers = len(crawlers_list)
+    ready_crawlers = 0
+    total_rows = 0
+    total_size = 0
+
+    print(f"Database: {dbName} \n\nTables:")
+
+    for index, table in enumerate(tables_list):
+        tables_meta = get_glue_table(dbName, table)
+        print(
+            f"{index + 1}. {table:<10} | "
+            f"rows: {tables_meta['Parameters'].get('recordCount', 'N/A'):>6} | "
+            f"size: {tables_meta['Parameters'].get('sizeKey', 'N/A'):>8} | "
+            f"columns: {len(tables_meta['StorageDescriptor']['Columns'])}"
+        )
+        total_rows += int(tables_meta['Parameters'].get('recordCount', 0))
+        total_size += int(tables_meta['Parameters'].get('sizeKey', 0))
+
+    print(f"\nCrawlers:")
+
+    for index, crawler in enumerate(crawlers_list):
+        crawler_info = get_crawler_info(crawler)
+        last_crawl = crawler_info.get('LastCrawl', {})
+
+        print(
+            f"{index + 1}. {crawler:<24} | "
+            f"status: {crawler_info.get('State', 'N/A')} | "
+            f" {last_crawl.get('Status', 'N/A')} |"
+            f" {last_crawl.get('StartTime', 'N/A')}"
+        )
+        if crawler_info.get('State') == 'READY':
+            ready_crawlers += 1
+
+    print(
+        f"\n\nSUMMARY\n"
+        f"{'-' * 40}\n"
+        f"{'Total Tables:':<20} {total_tables}\n"
+        f"{'Total Rows:':<20} {total_rows:,}\n"
+        f"{'Total Size:':<20} {total_size:,} bytes\n"
+        f"{'Total Crawlers:':<20} {total_crawlers}\n"
+        f"{'Crawlers Ready:':<20} {ready_crawlers}\n"
+    )
+
+
+def compare_table_counts(glue_client, athena_client, table_name, database, output_location):
+    glue_rows = get_table_row_count(database, table_name, client=glue_client, )
+    athena_result = count_table_rows(table_name, database, output_location, client=athena_client, )
+
+    athena_rows = int(athena_result[0]["total_rows"]) if athena_result else 0
+    difference = athena_rows - glue_rows
+
+    print("\n" + "=" * 70)
+    print(f"{'Table:':>17} {table_name}")
+    print(f"{'Glue Row Count:':>17} {glue_rows}")
+    print(f"{'Athena Row Count:':>17} {athena_rows}")
+    print(f"{'Difference:':>17} {difference}")
+    print("=" * 70)
+
+    return {"table": table_name, "glue_rows": glue_rows, "athena_rows": athena_rows, "difference": difference, }
+
+
 if __name__ == "__main__":
+    database_name = "olist_data_lake"
+    table_name = "customers"
+    output_location = "s3://wlmdatawizard-data-lake-873851887650-us-east-1-an/athena-results/"
+    glue_client = get_active_glue_client()
+    athena_client = get_active_athena_client()
 
-    tables_list = list_glue_tables("olist_data_lake")
-
-    table_metadata = get_glue_table("olist_data_lake", tables_list[0], region="us-east-1")
-    print(json.dumps(table_metadata, indent=4, default=str))
+    comparison = compare_table_counts(glue_client, athena_client, table_name, database_name, output_location)

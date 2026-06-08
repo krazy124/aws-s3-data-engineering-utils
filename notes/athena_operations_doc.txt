@@ -1,0 +1,145 @@
+ATHENA_OPERATIONS.PY DOCUMENTATION
+
+OVERVIEW
+
+This module provides a simplified interface for working with AWS Athena.
+It handles connection management, query execution, status monitoring,
+and result retrieval while hiding most of the AWS-specific complexity.
+
+FUNCTION REFERENCE
+
+get_athena_client()
+
+Purpose: Creates a connection to Athena.
+
+Notes: - Uses client caching so the connection is only created once. -
+Reuses the cached client on future calls. - Attempts local AWS
+credentials first, then Streamlit secrets.
+
+Typical Usage: client = get_athena_client()
+
+start_query()
+
+Purpose: Submits a SQL query to Athena for execution.
+
+Inputs: - client - query - database - output_location - workgroup
+
+Returns: QueryExecutionId
+
+Think: “Run this SQL statement.”
+
+get_query_status()
+
+Purpose: Checks the current status of a running Athena query.
+
+Possible Status Values: - QUEUED - RUNNING - SUCCEEDED - FAILED -
+CANCELLED
+
+Think: “Are you finished yet?”
+
+wait_for_query()
+
+Purpose: Repeatedly checks query status until the query finishes.
+
+Workflow: 1. Check status 2. Wait 3. Check again 4. Continue until
+complete
+
+Think: “Wait here until Athena is done.”
+
+get_query_results()
+
+Purpose: Downloads the query results after execution completes.
+
+Returns: List of dictionaries.
+
+Example:
+
+    [
+        {"order_id": "123"},
+        {"order_id": "456"}
+    ]
+
+Think: “Give me the results.”
+
+run_query()
+
+Purpose: Executes the complete Athena workflow.
+
+Internally Calls: - start_query() - wait_for_query() -
+get_query_results()
+
+Think: “Run the query from start to finish.”
+
+This is the function you will likely use most often.
+
+show_tables()
+
+Purpose: Lists all tables in a database.
+
+Generated SQL:
+
+    SHOW TABLES IN database_name
+
+Think: “Show me every table.”
+
+preview_table()
+
+Purpose: Returns a sample of records from a table.
+
+Generated SQL:
+
+    SELECT *
+    FROM table_name
+    LIMIT n
+
+Think: “Show me some example rows.”
+
+count_table_rows()
+
+Purpose: Counts the number of rows in a table.
+
+Generated SQL:
+
+    SELECT COUNT(*)
+    FROM table_name
+
+Think: “How many records are in this table?”
+
+mini_athena_dashboard()
+
+Purpose: Simple testing function.
+
+Workflow: 1. Connect to Athena 2. List tables 3. Display results
+
+Think: “Verify Athena is working.”
+
+AWS BOTO3 METHOD REFERENCE
+
+  ----------------------- --------------------------------------
+  Function                boto3 Athena Method(s) |
+
+  get_athena_client       list_work_groups() |
+  start_query             start_query_execution() |
+  get_query_status        get_query_execution() | Uses
+  wait_for_query          get_query_status() |
+  get_query_results       get_paginator(‘get_query_results’) |
+  run_query show_tables   Uses internal helper functions | Uses
+  preview_table           run_query() | Uses run_query() | Uses
+  count_table_rows        run_query() | Uses
+  mini_athena_dashboard   get_athena_client(), | show_tables() |
+  ----------------------- --------------------------------------
+
+COMMON ATHENA WORKFLOW
+
+client = get_athena_client()
+
+results = run_query( client=client, query=“SELECT * FROM orders LIMIT
+10”, database=“olist_data_lake”,
+output_location=“s3://bucket/athena-results/” )
+
+The typical development workflow is:
+
+1.  Create or retrieve an Athena client.
+2.  Write SQL.
+3.  Execute using run_query().
+4.  Process the returned rows.
