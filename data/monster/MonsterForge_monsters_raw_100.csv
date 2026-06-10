@@ -1,0 +1,106 @@
+﻿Monster ID,Monster Name,Monster Type,Danger Level,Created Date,Base Price,Status
+M001,Venomtail,Vampire,6,1/5/26,"$6,371.00",inactive
+M002,Rotjaw,Undead,9,1/5/26,"$7,835.00",ACTIVE
+M003,Cinderwing,undead,7,1/5/26,"$7,227.00",ACTIVE
+M004,Grimtooth,ghost,7,Jan 5 2026,"$10,437.00",active
+M005,Mist Walker,ghost,2,2026/01/05,"$2,301.00",Unknown
+M006,Frostfang,ghost,8,1/5/26,"$9,744.00",Inactive
+M007,Crypt Stalker,Ghost,3,2026-01-05,$614.00,Testing
+M008,Swamp Maw,Beast,5,2026/01/05,"$1,319.00",Unknown
+M009,Voidwing,VAMPIRE,10,2026/01/05,"$9,911.00",Active
+M010,Venomtail,ZOMBIE,8,2026-01-05,"$1,003.00",Testing
+M011,Grimtooth,dragon,5,1/5/26,"$3,171.00",active
+M012,,ghost,3,1/5/26,"$9,578.00",Unknown
+M013,Bloodfang,Zombie,6,2026-01-05,"$1,372.00",active
+M014,Ashcrawler,VAMPIRE,4,2026/01/05,"$2,243.00",testing
+M015,Bloodfang,VAMPIRE,two,05-01-2026,"$10,971.00",testing
+M016,Crypt Stalker,Dragon,10,Jan 5 2026,"$10,654.00",ACTIVE
+M017,Rotjaw,VAMPIRE,7,Jan 5 2026,"$6,211.00",Testing
+M018,Shadowmaw,undead,3,not a date,"$2,328.00",Testing
+M019,Bone Rattler,Undead,10,2026-01-05,"$3,500.00",active
+M020,Venomtail,dragon,5,2026/01/05,"$7,955.00",Testing
+M021,Grimtooth,Vampire,7,2026/01/05,"$6,777.00",inactive
+M022,Ironhide,VAMPIRE,8,05-01-2026,-500,Testing
+M023,Frostfang,dragon,8,05-01-2026,"$13,770.00",unknown
+M024,Cinderwing,ghost,6,Jan 5 2026,"$11,655.00",Unknown
+M025,Bone Rattler,dragon,2,2026-01-05,"$11,551.00",Active
+M026,Ironhide,Ghost,5,05-01-2026,"$7,479.00",Inactive
+M027,,Vampire,7,2026-01-05,"$12,849.00",Active
+M028,Thunderclaw,ghost,7,2026/01/05,"$13,523.00",inactive
+M029,Cinderwing,Undead,3,2026/01/05,"$2,827.00",active
+M030,Moonstalker,ghost,8,2026/01/05,"$10,093.00",Unknown
+M031,Cinderwing,Zombie,3,2026-01-05,"$8,292.00",active
+M032,Dreadclaw,ZOMBIE,5,2026/01/05,"$10,916.00",unknown
+M033,Night Howler,dragon,3,2026/01/05,$966.00,Testing
+M034,Venomtail,Vampire,6,1/5/26,"$4,544.00",ACTIVE
+M035,Moonstalker,ghost,High,05-01-2026,"$6,725.00",ACTIVE
+M036,Shadowmaw,vampire,3,05-01-2026,"$3,550.00",active
+M037,Shadowmaw,VAMPIRE,3,1/5/26,"$4,429.00",Testing
+M038,Voidwing,ghost,3,05-01-2026,$606.00,unknown
+M039,Mist Walker,ZOMBIE,8,1/5/26,"$9,547.00",Testing
+M040,Stormscale,VAMPIRE,8,1/5/26,"$5,418.00",Inactive
+M041,Bloodfang,Zombie,5,05-01-2026,"$14,273.00",Testing
+M042,Swamp Maw,VAMPIRE,1,1/5/26,USD 1100,active
+M043,Ghoulfang,ghost,8,Jan 5 2026,"$14,114.00",ACTIVE
+M044,,zombie,7,05-01-2026,"$6,795.00",ACTIVE
+M045,Venomtail,Dragon,8,1/5/26,"$13,980.00",active
+M046,Frostfang,vampire,10,Jan 5 2026,"$8,539.00",Active
+M047,Crypt Stalker,dragon,5,2026-01-05,"$14,091.00",active
+M048,Thunderclaw,undead,3,32/13/2026,"$2,698.00",Testing
+M049,Venomtail,Beast,2,05-01-2026,"$14,237.00",active
+M050,Moonstalker,Vampire,2,1/5/26,"$12,333.00",unknown
+M051,Shadowmaw,Ghost,7,Jan 5 2026,"$5,995.00",ACTIVE
+M052,Venomtail,dragon,2,2026/01/05,"$13,909.00",active
+M053,Mist Walker,dragon,9,Jan 5 2026,"$3,070.00",Testing
+M054,Bloodfang,undead,8,1/5/26,"$13,877.00",testing
+M055,Ghoulfang,Dragon,two,Jan 5 2026,"$1,187.00",unknown
+M056,Voidwing,Dragon,6,05-01-2026,"$6,844.00",Active
+M057,Cinderwing,dragon,4,Jan 5 2026,"$7,098.00",testing
+M058,Bloodfang,Vampire,6,05-01-2026,"$11,347.00",Active
+M059,Crypt Stalker,VAMPIRE,10,05-01-2026,"$9,660.00",Unknown
+M060,Crypt Stalker,vampire,2,1/5/26,"$9,142.00",testing
+M061,Frostfang,dragon,9,2026-01-05,"$13,758.00",Active
+M062,Stormscale,VAMPIRE,9,1/5/26,USD 1100,ACTIVE
+M063,Ironhide,Zombie,6,1/5/26,"$13,016.00",Unknown
+M064,Shadowmaw,Vampire,5,05-01-2026,"$14,936.00",ACTIVE
+M065,Rotjaw,Dragon,1,2026-01-05,"$3,239.00",inactive
+M066,Dreadclaw,Undead,10,2026-01-05,"$11,138.00",ACTIVE
+M067,Cinderwing,beast,6,2026-01-05,"$5,355.00",ACTIVE
+M068,Bone Rattler,dragon,2,2026-01-05,"$4,880.00",unknown
+M069,Stormscale,ghost,4,1/5/26,"$14,987.00",Testing
+M070,Ashcrawler,ZOMBIE,10,2026-01-05,"$11,770.00",testing
+M071,,Ghost,1,05-01-2026,"$10,870.00",inactive
+M072,Dreadclaw,Undead,2,2026/01/05,"$9,187.00",Active
+M073,Cinderwing,Undead,7,2026-01-05,"$1,583.00",unknown
+M074,Frostfang,beast,4,1/5/26,"$12,771.00",Unknown
+M075,Dreadclaw,Zombie,7,2026/01/05,"$3,025.00",Inactive
+M076,Swamp Maw,Beast,4,05-01-2026,"$8,587.00",Testing
+M077,Voidwing,Zombie,1,not a date,"$14,662.00",unknown
+M078,Dreadclaw,undead,3,2026/01/05,"$9,059.00",testing
+M079,Bloodfang,undead,10,Jan 5 2026,"$10,813.00",unknown
+M080,Crypt Stalker,beast,9,2026-01-05,$512.00,active
+M081,Swamp Maw,Vampire,3,1/5/26,"$9,791.00",active
+M082,Voidwing,VAMPIRE,8,2026-01-05,-500,Active
+M083,Voidwing,beast,8,2026/01/05,"$7,158.00",Active
+M084,Moonstalker,Beast,3,Jan 5 2026,$831.00,Unknown
+M085,Venomtail,VAMPIRE,2,2026-01-05,"$1,845.00",active
+M086,Bloodfang,ZOMBIE,5,Jan 5 2026,"$10,507.00",Active
+M087,Frostfang,dragon,6,2026-01-05,"$8,312.00",Active
+M088,Swamp Maw,ZOMBIE,1,2026/01/05,"$1,119.00",Active
+M089,,Undead,4,05-01-2026,$805.00,Inactive
+M090,Ironhide,undead,7,Jan 5 2026,"$5,158.00",testing
+M091,Rotjaw,ghost,9,Jan 5 2026,"$7,916.00",Inactive
+M092,Frostfang,Zombie,1,2026-01-05,"$12,099.00",unknown
+M093,Crypt Stalker,beast,10,1/5/26,"$1,813.00",Testing
+M094,Grimtooth,zombie,9,1/5/26,"$3,465.00",testing
+M095,Ashcrawler,Dragon,4,Jan 5 2026,"$10,051.00",unknown
+M096,Crypt Stalker,zombie,5,05-01-2026,"$6,661.00",inactive
+M097,Shadowmaw,vampire,6,Jan 5 2026,"$13,000.00",Inactive
+M098,Swamp Maw,undead,9,2026/01/05,"$14,770.00",inactive
+M099,Ghoulfang,VAMPIRE,2,2026-01-05,"$8,749.00",Testing
+M100,Grimtooth,dragon,5,05-01-2026,"$6,140.00",active
+M007,Crypt Stalker,Ghost,3,2026-01-05,$614.00,Testing
+M020,Venomtail,dragon,5,2026/01/05,"$7,955.00",Testing
+M040,Stormscale,VAMPIRE,8,1/5/26,"$5,418.00",Inactive
+M060,Crypt Stalker,vampire,2,1/5/26,"$9,142.00",testing
+M080,Crypt Stalker,beast,9,2026-01-05,$512.00,active

@@ -146,11 +146,7 @@ def create_bucket(bucket_name, region="us-east-1", client=None):
 
         return True
 
-    return run_safely(
-        action,
-        default_return=False,
-        error_message=f"Failed to create bucket {bucket_name}",
-    )
+    return run_safely(action, default_return=False, error_message=f"Failed to create bucket {bucket_name}", )
 
 
 def create_folder(bucket_name, folder_name, region="us-east-1", client=None):
@@ -353,13 +349,7 @@ def empty_folder(bucket_name, object_prefix, region="us-east-1", client=None):
     )
 
 
-def upload_folder(
-    bucket_name,
-    folder_path,
-    object_prefix=None,
-    region="us-east-1",
-    client=None,
-):
+def upload_folder(bucket_name, folder_path, object_prefix=None, region="us-east-1", client=None, ):
     def action():
         s3_client = get_active_s3_client(region, client)
         object_prefix_clean = normalize_prefix(object_prefix)
@@ -403,13 +393,7 @@ def upload_folder(
     )
 
 
-def upload_file(
-    bucket_name,
-    file_path,
-    object_name=None,
-    region="us-east-1",
-    client=None,
-):
+def upload_file(bucket_name, file_path, object_name=None, region="us-east-1", client=None, ):
     if object_name is None:
         object_name = os.path.basename(file_path)
 
@@ -433,13 +417,7 @@ def upload_file(
     )
 
 
-def download_folder(
-    bucket_name,
-    object_prefix,
-    folder_path,
-    region="us-east-1",
-    client=None,
-):
+def download_folder(bucket_name, object_prefix, folder_path, region="us-east-1", client=None, ):
     def action():
         s3_client = get_active_s3_client(region, client)
         object_prefix_clean = normalize_prefix(object_prefix)
@@ -477,13 +455,7 @@ def download_folder(
     )
 
 
-def download_file(
-    bucket_name,
-    object_name,
-    file_path=None,
-    region="us-east-1",
-    client=None,
-):
+def download_file(bucket_name, object_name, file_path=None, region="us-east-1", client=None, ):
     if file_path is None:
         file_path = object_name
 
@@ -510,14 +482,7 @@ def download_file(
     )
 
 
-def move_folder(
-    source_bucket,
-    source_prefix,
-    dest_bucket,
-    dest_prefix=None,
-    region="us-east-1",
-    client=None,
-):
+def move_folder(source_bucket, source_prefix, dest_bucket, dest_prefix=None, region="us-east-1", client=None, ):
     def action():
         s3_client = get_active_s3_client(region, client)
 
@@ -566,14 +531,7 @@ def move_folder(
     )
 
 
-def move_file(
-    source_bucket,
-    source_object,
-    dest_bucket,
-    dest_object=None,
-    region="us-east-1",
-    client=None,
-):
+def move_file(source_bucket, source_object, dest_bucket, dest_object=None, region="us-east-1", client=None, ):
     if dest_object is None:
         dest_object = source_object
 
@@ -600,14 +558,7 @@ def move_file(
     )
 
 
-def copy_folder(
-    source_bucket,
-    source_prefix,
-    dest_bucket,
-    dest_prefix=None,
-    region="us-east-1",
-    client=None,
-):
+def copy_folder(source_bucket, source_prefix, dest_bucket, dest_prefix=None, region="us-east-1", client=None, ):
     def action():
         s3_client = get_active_s3_client(region, client)
 
@@ -656,14 +607,7 @@ def copy_folder(
     )
 
 
-def copy_file(
-    source_bucket,
-    source_object,
-    dest_bucket,
-    dest_object=None,
-    region="us-east-1",
-    client=None,
-):
+def copy_file(source_bucket, source_object, dest_bucket, dest_object=None, region="us-east-1", client=None, ):
     if dest_object is None:
         dest_object = source_object
 
@@ -705,4 +649,20 @@ def list_files_in_prefix(bucket_name, prefix, region="us-east-1", client=None):
 
 
 if __name__ == "__main__":
-    print(list_buckets())
+    bucket_name = "wlmdatawizard-monsterforge-873851887650"
+
+    folders_list = [
+        "raw",
+        "clean",
+        "quarantine",
+        "reports",
+        "athena-results",
+    ]
+
+    for folder_name in folders_list:
+        created = create_folder(
+            bucket_name=bucket_name,
+            folder_name=folder_name,
+        )
+
+        print(f"{folder_name}: {created}")

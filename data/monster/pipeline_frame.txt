@@ -1,0 +1,73 @@
+monsterforge-data-lake/
+
+raw/
+    monsters/
+    suppliers/
+    ingredients/
+    labs/
+    production_logs/
+    orders/
+
+processed/
+    temp/
+
+clean/
+    parquet/
+
+quarantine/
+
+reports/
+
+
+| Transformation           | Covered By                                                    |
+| ------------------------ | ------------------------------------------------------------- |
+| Column renaming          | All CSVs                                                      |
+| Type conversion          | danger level, ratings, quantities, scores                     |
+| Date parsing             | created, expiration, production, order, ship dates            |
+| Currency parsing         | base price, unit cost, production cost, unit price            |
+| Null handling            | names, categories, emails, dates                              |
+| Duplicate removal        | IDs across all datasets                                       |
+| Category standardization | type, status, country, region                                 |
+| ID validation            | all primary keys                                              |
+| Foreign key validation   | monster_id, supplier_id, lab_id                               |
+| Negative value detection | cost, quantity, units, price                                  |
+| Business rule validation | dates, ratings, scores, discounts                             |
+| Schema drift handling    | intentionally add/remove columns in one raw file version      |
+| Joins                    | orders + monsters, ingredients + suppliers, production + labs |
+| Derived columns          | total order value, failure rate, margin                       |
+| Clean Parquet output     | final cleaned tables                                          |
+
+Basic cleaning
+1. Column renaming
+2. Type conversion
+3. Date parsing
+4. Currency parsing
+5. Null handling
+6. Duplicate removal
+7. Category standardization
+
+ValiD validation
+9. Foreign key validation
+10. Negative value detection
+11. Business rule validation
+
+The more advanced stuff
+12. Schema drift handling
+13. Joins
+14. Derived columns
+15. Clean Parquet outputdation checks
+
+Record count
+| Table           |  Rows |
+| --------------- | ----: |
+| monsters        |   100 |
+| suppliers       |    25 |
+| ingredients     |    75 |
+| labs            |    10 |
+| production_logs | 2,000 |
+| orders          | 5,000 |
+
+
+
+
+Monsters.csv
