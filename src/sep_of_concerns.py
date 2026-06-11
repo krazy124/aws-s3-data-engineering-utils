@@ -650,19 +650,3 @@ def list_files_in_prefix(bucket_name, prefix, region="us-east-1", client=None):
 
 if __name__ == "__main__":
     bucket_name = "wlmdatawizard-monsterforge-873851887650"
-
-    folders_list = [
-        "raw",
-        "clean",
-        "quarantine",
-        "reports",
-        "athena-results",
-    ]
-
-    for folder_name in folders_list:
-        created = create_folder(
-            bucket_name=bucket_name,
-            folder_name=folder_name,
-        )
-
-        print(f"{folder_name}: {created}")
