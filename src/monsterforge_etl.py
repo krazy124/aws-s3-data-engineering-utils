@@ -1,27 +1,21 @@
-from glue_transformations import (
-    log_step,
-    print_quality_report,
-    clean_column_names,
-    trim_string_columns,
-    add_missing_flag,
-    standardize_category_column,
-    parse_currency_to_double,
-    fix_negative_values_with_flag,
-    parse_multiple_date_formats,
-    convert_to_integer,
-    select_columns,
-)
-from pyspark.sql.functions import col, when
-from pyspark.sql import DataFrame, SparkSession
-from botocore.exceptions import ClientError, NoCredentialsError
-import pandas as pd
-import boto3
-from io import StringIO
-import logging
-```python
 # monsterforge_etl.py
 # MonsterForge Industries ETL Pipeline
 # Project-specific pipeline built on reusable PySpark transformation helpers
+
+import logging
+from io import StringIO
+
+import boto3
+import pandas as pd
+from botocore.exceptions import ClientError, NoCredentialsError
+from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql.functions import col, when
+
+from glue_transformations import (log_step, print_quality_report,
+                                  clean_column_names, trim_string_columns,
+                                  add_missing_flag, standardize_category_column,
+                                  parse_currency_to_double, fix_negative_values_with_flag,
+                                  parse_multiple_date_formats, convert_to_integer, select_columns, )
 
 
 logging.basicConfig(
