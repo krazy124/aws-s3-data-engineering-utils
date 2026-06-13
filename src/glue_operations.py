@@ -215,15 +215,13 @@ def list_glue_crawlers(region="us-east-1", client=None):
     )
 
 
-def create_glue_crawler(
-    crawler_name: str,
-    database_name: str,
-    role_arn: str,
-    s3_target_path: str,
-    description: str = ""
-):
+def create_glue_crawler(crawler_name: str, database_name: str, role_arn: str, s3_target_path: str, description: str = "", region: str = "us-east-1", client=None, ):
     def action():
-        glue_client = get_glue_client()
+        glue_client = get_active_glue_client(region, client)
+
+        if glue_client is None:
+            logging.error("No active Glue client available.")
+            return None
 
         response = glue_client.create_crawler(
             Name=crawler_name,
@@ -239,8 +237,11 @@ def create_glue_crawler(
             },
             SchemaChangePolicy={
                 "UpdateBehavior": "UPDATE_IN_DATABASE",
-                "DeleteBehavior": "LOG"
-            }
+                "DeleteBehavior": "LOG",
+            },
+            RecrawlPolicy={
+                "RecrawlBehavior": "CRAWL_EVERYTHING",
+            },
         )
 
         logging.info(f"Created crawler: {crawler_name}")
@@ -249,24 +250,7 @@ def create_glue_crawler(
     return run_safely(
         action,
         default_return=None,
-        error_message=f"Failed to create crawler: {crawler_name}"
-    )
-
-
-def get_crawler_info(crawler_name, region="us-east-1", client=None):
-    def action():
-        glue_client = get_active_glue_client(region, client)
-
-        response = glue_client.get_crawler(
-            Name=crawler_name,
-        )
-
-        return response.get("Crawler", {})
-
-    return run_safely(
-        action,
-        default_return={},
-        error_message=f"Failed to get crawler info for {crawler_name}",
+        error_message=f"Failed to create crawler: {crawler_name}",
     )
 
 
