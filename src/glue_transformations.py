@@ -351,165 +351,6 @@ def standard_cleaning_pipeline(df: DataFrame):
     return df
 
 
-# GT22.v1 - MonsterForge Cleaning Pipeline
-def monsterforge_cleaning_pipeline(df: DataFrame):
-    """MonsterForge-specific cleaning pipeline for monsters.csv."""
-
-    monster_type_mapping = {
-        "zombie": "zombie",
-        "undead": "zombie",
-        "vampire": "vampire",
-        "dragon": "dragon",
-        "beast": "beast",
-        "ice beast": "beast",
-        "ghost": "ghost",
-    }
-
-    status_mapping = {
-        "active": "active",
-        "inactive": "inactive",
-        "testing": "testing",
-        "unknown": "unknown",
-        "retired": "retired",
-    }
-
-    df = clean_column_names(df)
-    df = trim_string_columns(df)
-
-    df = add_missing_flag(df, "monster_id")
-    df = add_missing_flag(df, "monster_name")
-    df = add_missing_flag(df, "created_date")
-
-    df = standardize_category_column(df, "monster_type", monster_type_mapping)
-    df = standardize_category_column(df, "status", status_mapping)
-
-    df = parse_currency_to_double(df, "base_price")
-    df = fix_negative_values_with_flag(df, "base_price")
-
-    df = parse_multiple_date_formats(df, "created_date")
-    df = convert_to_integer(df, "danger_level")
-
-    expected_columns = [
-        "monster_id",
-        "monster_name",
-        "monster_type",
-        "danger_level",
-        "created_date",
-        "base_price",
-        "status",
-        "monster_id_missing_flag",
-        "monster_name_missing_flag",
-        "created_date_missing_flag",
-        "base_price_corrected_flag",
-    ]
-
-    df = select_columns(df, expected_columns)
-
-    return df
-
-
-# GT22.v2 - Split Clean And Quarantine
-def split_clean_quarantine(df: DataFrame):
-    """Split cleaned MonsterForge records into clean and quarantine DataFrames."""
-
-    quarantine_condition = (
-        col("monster_id_missing_flag")
-        | col("monster_name_missing_flag")
-        | col("created_date").isNull()
-        | col("danger_level").isNull()
-    )
-
-    quarantine_df = df.withColumn(
-        "quarantine_reason",
-        when(col("monster_id_missing_flag"), "missing_monster_id")
-        .when(col("monster_name_missing_flag"), "missing_monster_name")
-        .when(col("created_date").isNull(), "invalid_created_date")
-        .when(col("danger_level").isNull(), "invalid_danger_level")
-        .otherwise("unknown_reason"),
-    ).filter(quarantine_condition)
-
-    clean_df = df.filter(~quarantine_condition)
-
-    return clean_df, quarantine_df
-
-
-# GT22.v3 - Load MonsterForge Raw Data
-def load_monsterforge_raw_data(spark: SparkSession, input_path: str):
-    """Load raw MonsterForge CSV data."""
-    log_step("Loading Raw MonsterForge Data")
-
-    return spark.read.option("header", True).csv(input_path)
-
-
-# GT22.v4 - Generate MonsterForge Quality Report
-def generate_quality_report(df_cleaned, clean_df, quarantine_df):
-    """Generate MonsterForge data quality metrics."""
-    return {
-        "total_records": df_cleaned.count(),
-        "clean_records": clean_df.count(),
-        "quarantined_records": quarantine_df.count(),
-        "missing_ids": df_cleaned.filter(col("monster_id_missing_flag")).count(),
-        "missing_names": df_cleaned.filter(col("monster_name_missing_flag")).count(),
-        "invalid_dates": df_cleaned.filter(col("created_date").isNull()).count(),
-        "invalid_danger_levels": df_cleaned.filter(col("danger_level").isNull()).count(),
-        "corrected_negative_prices": df_cleaned.filter(
-            col("base_price_corrected_flag")
-        ).count(),
-    }
-
-
-# GT22.v5 - Run MonsterForge ETL
-def run_monsterforge_etl(
-    spark: SparkSession,
-    input_path: str,
-    preview: bool = True,
-):
-    """Run the full MonsterForge transformation, quarantine, and reporting flow."""
-
-    df_raw = load_monsterforge_raw_data(spark, input_path)
-
-    if preview:
-        log_step("Raw Data Preview")
-        df_raw.select(
-            "Monster ID",
-            "Base Price",
-            "Created Date",
-            "Danger Level",
-        ).show(10, False)
-
-    log_step("Applying MonsterForge Cleaning Pipeline")
-    df_cleaned = monsterforge_cleaning_pipeline(df_raw)
-
-    if preview:
-        log_step("Cleaned Data Preview")
-        df_cleaned.select(
-            "monster_id",
-            "base_price",
-            "created_date",
-            "danger_level",
-            "base_price_corrected_flag",
-        ).show(10, False)
-
-    log_step("Splitting Clean and Quarantine Records")
-    clean_df, quarantine_df = split_clean_quarantine(df_cleaned)
-
-    if preview:
-        log_step("Quarantined Records Preview")
-        quarantine_df.select(
-            "monster_id",
-            "monster_name",
-            "created_date",
-            "danger_level",
-            "quarantine_reason",
-        ).show(50, False)
-
-    log_step("Generating Data Quality Report")
-    report = generate_quality_report(df_cleaned, clean_df, quarantine_df)
-    print_quality_report(report)
-
-    return clean_df, quarantine_df, report
-
-
 if __name__ == "__main__":
 
     spark = (
@@ -522,9 +363,16 @@ if __name__ == "__main__":
 
     input_path = "data/monster/MonsterForge_monsters_raw_100.csv"
 
+    clean_output_path = "data/monster/output/clean/monsters"
+    quarantine_output_path = "data/monster/output/quarantine/monsters"
+    report_output_path = "data/monster/output/reports/quality_report"
+
     clean_df, quarantine_df, report = run_monsterforge_etl(
         spark=spark,
         input_path=input_path,
+        clean_output_path=clean_output_path,
+        quarantine_output_path=quarantine_output_path,
+        report_output_path=report_output_path,
         preview=True,
     )
 
