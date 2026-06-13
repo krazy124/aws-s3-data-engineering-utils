@@ -15,7 +15,8 @@ from glue_transformations import (log_step, print_quality_report,
                                   clean_column_names, trim_string_columns,
                                   add_missing_flag, standardize_category_column,
                                   parse_currency_to_double, fix_negative_values_with_flag,
-                                  parse_multiple_date_formats, convert_to_integer, select_columns, )
+                                  parse_multiple_date_formats, convert_to_integer,
+                                  select_columns, create_glue_crawler)
 
 
 logging.basicConfig(
@@ -319,22 +320,35 @@ def run_monsterforge_etl(
 
 if __name__ == "__main__":
 
-    spark = (
-        SparkSession.builder
-        .appName("MonsterForge ETL")
-        .getOrCreate()
+    response = create_glue_crawler(
+        crawler_name="monsterforge-quarantine-crawler",
+        database_name="monsterforge_data_lake",
+        role_arn="arn:aws:iam::873851887650:role/AWSGlueServiceRole-OlistCrawler",
+        s3_target_path="s3://wlmdatawizard-monsterforge-873851887650/quarantine/monsters/",
+        description="MonsterForge quarantine crawler",
     )
 
-    spark.sparkContext.setLogLevel("ERROR")
+    if response:
+        print("Crawler created successfully.")
+    else:
+        print("Crawler creation failed.")
 
-    input_path = "data/monster/MonsterForge_monsters_raw_100.csv"
-    bucket_name = "wlmdatawizard-monsterforge-873851887650"
+    # spark = (
+    #     SparkSession.builder
+    #     .appName("MonsterForge ETL")
+    #     .getOrCreate()
+    # )
 
-    clean_df, quarantine_df, report = run_monsterforge_etl(
-        spark=spark,
-        input_path=input_path,
-        bucket_name=bucket_name,
-        preview=True,
-    )
+    # spark.sparkContext.setLogLevel("ERROR")
 
-    log_step("MonsterForge ETL Complete")
+    # input_path = "data/monster/MonsterForge_monsters_raw_100.csv"
+    # bucket_name = "wlmdatawizard-monsterforge-873851887650"
+
+    # clean_df, quarantine_df, report = run_monsterforge_etl(
+    #     spark=spark,
+    #     input_path=input_path,
+    #     bucket_name=bucket_name,
+    #     preview=True,
+    # )
+
+    # log_step("MonsterForge ETL Complete")
