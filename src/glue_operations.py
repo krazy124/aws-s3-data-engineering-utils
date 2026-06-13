@@ -215,6 +215,44 @@ def list_glue_crawlers(region="us-east-1", client=None):
     )
 
 
+def create_glue_crawler(
+    crawler_name: str,
+    database_name: str,
+    role_arn: str,
+    s3_target_path: str,
+    description: str = ""
+):
+    def action():
+        glue_client = get_glue_client()
+
+        response = glue_client.create_crawler(
+            Name=crawler_name,
+            Role=role_arn,
+            DatabaseName=database_name,
+            Description=description,
+            Targets={
+                "S3Targets": [
+                    {
+                        "Path": s3_target_path
+                    }
+                ]
+            },
+            SchemaChangePolicy={
+                "UpdateBehavior": "UPDATE_IN_DATABASE",
+                "DeleteBehavior": "LOG"
+            }
+        )
+
+        logging.info(f"Created crawler: {crawler_name}")
+        return response
+
+    return run_safely(
+        action,
+        default_return=None,
+        error_message=f"Failed to create crawler: {crawler_name}"
+    )
+
+
 def get_crawler_info(crawler_name, region="us-east-1", client=None):
     def action():
         glue_client = get_active_glue_client(region, client)
