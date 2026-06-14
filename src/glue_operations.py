@@ -290,6 +290,23 @@ def get_crawler_status(crawler_name, region="us-east-1", client=None):
     )
 
 
+def get_crawler_info(crawler_name, region="us-east-1", client=None):
+    def action():
+        glue_client = get_active_glue_client(region, client)
+
+        response = glue_client.get_crawler(
+            Name=crawler_name,
+        )
+
+        return response.get("Crawler", {})
+
+    return run_safely(
+        action,
+        default_return={},
+        error_message=f"Failed to get crawler info for {crawler_name}",
+    )
+
+
 def run_crawler_workflow(crawler_name, region="us-east-1", client=None):
     print("\n" + "=" * 70)
     print(f"CRAWLER WORKFLOW: {crawler_name}")
