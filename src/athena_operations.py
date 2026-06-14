@@ -1,95 +1,13 @@
-# monsterforge_etl.py
-# # MonsterForge Industries ETL Pipeline
-# # Project-specific pipeline built on reusable PySpark transformation helpers
+"""Reusable Athena query execution and result helpers."""
 
 import logging
-from io import StringIO
-import boto3
+import time
+
 import pandas as pd
-from botocore.exceptions import ClientError, NoCredentialsError
-from pyspark.sql import DataFrame, SparkSession
-from pyspark.sql.functions import col, when
-from glue_transformations import (log_step, print_quality_report, clean_column_names,
-                                  trim_string_columns, add_missing_flag,
-                                  standardize_category_column, parse_currency_to_double,
-                                  fix_negative_values_with_flag, parse_multiple_date_formats,
-                                  convert_to_integer, select_columns, )
 
+from aws_clients import get_active_athena_client, run_safely
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-)
-
-_ATHENA_CLIENT_CACHE = {}
-
-
-def run_safely(action, default_return=None, error_message="Operation failed"):
-    try:
-        return action()
-
-    except NoCredentialsError:
-        logging.error("AWS credentials not configured.")
-        return default_return
-
-    except ClientError as e:
-        logging.error(f"{error_message}: {e}")
-        return default_return
-
-    except Exception as e:
-        logging.error(f"{error_message}: {e}")
-        return default_return
-
-
-def get_athena_client(region="us-east-1"):
-    def local_connection():
-        client = boto3.client("athena", region_name=region)
-        client.list_work_groups()
-        logging.info(f"Connected to Athena using local/default credentials in {region}")
-        return client
-
-    client = run_safely(
-        local_connection,
-        default_return=None,
-        error_message="Local Athena connection failed",
-    )
-
-    if not client:
-        def streamlit_connection():
-            client = boto3.client(
-                "athena",
-                aws_access_key_id=st.secrets["AWS_ACCESS_KEY_ID"],
-                aws_secret_access_key=st.secrets["AWS_SECRET_ACCESS_KEY"],
-                region_name=st.secrets.get("AWS_DEFAULT_REGION", region),
-            )
-
-            client.list_work_groups()
-            logging.info("Connected to Athena using Streamlit secrets")
-            return client
-
-        client = run_safely(
-            streamlit_connection,
-            default_return=None,
-            error_message="Streamlit Athena connection failed",
-        )
-
-    return client
-
-
-def get_active_athena_client(region="us-east-1", client=None):
-    if client is not None:
-        return client
-
-    if region in _ATHENA_CLIENT_CACHE:
-        logging.info(f"Using cached Athena client for {region}")
-        return _ATHENA_CLIENT_CACHE[region]
-
-    new_client = get_athena_client(region)
-
-    if new_client is not None:
-        _ATHENA_CLIENT_CACHE[region] = new_client
-
-    return new_client
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
 def start_query(query, database, output_location, workgroup="primary", region="us-east-1", client=None):
@@ -309,29 +227,16 @@ def query_to_dataframe(query, database, output_location, workgroup="primary", re
     return pd.DataFrame(results)
 
 
-if __name__ == "__main__":
-    database = "olist_data_lake"
-    output_location = "s3://wlmdatawizard-data-lake-873851887650-us-east-1-an/athena-results/"
 
-    athena_client = get_active_athena_client()
+def repair_table_partitions(table_name, database, output_location, workgroup="primary", region="us-east-1", client=None):
+    """Run MSCK REPAIR TABLE to load Hive-style partitions into Athena."""
+    query = f"MSCK REPAIR TABLE {table_name}"
 
-    query = """
-    SELECT customer_state,
-           COUNT(*) AS total_customers
-    FROM customers
-    GROUP BY customer_state
-    ORDER BY total_customers DESC
-    LIMIT 10
-    """
-
-    print("\nDATAFRAME TEST")
-    print("-" * 40)
-
-    df = query_to_dataframe(
-        query,
-        database,
-        output_location,
-        client=athena_client,
+    return run_query(
+        query=query,
+        database=database,
+        output_location=output_location,
+        workgroup=workgroup,
+        region=region,
+        client=client,
     )
-
-    print(df)

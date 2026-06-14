@@ -1,33 +1,17 @@
-# monsterforge_glue_setup.py
-# Automates MonsterForge Glue database, crawler creation, crawler runs, and table verification.
+"""MonsterForge Glue database, crawler setup, crawler runs, and table verification."""
 
 import logging
 
-from glue_operations import (
-    get_active_glue_client,
-    run_safely,
-    list_glue_databases,
-    list_glue_tables,
-    create_glue_crawler,
-    get_crawler_info,
-    run_crawler_workflow,
-)
+from aws_clients import get_active_glue_client, run_safely
+from glue_catalog_operations import list_glue_databases, list_glue_tables
+from glue_crawler_operations import create_glue_crawler, get_crawler_info, run_crawler_workflow
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 REGION = "us-east-1"
-
 DATABASE_NAME = "monsterforge_data_lake"
-
 BUCKET_NAME = "wlmdatawizard-monsterforge-873851887650"
-
-GLUE_ROLE_ARN = (
-    "arn:aws:iam::873851887650:role/service-role/"
-    "AWSGlueServiceRole-OlistCrawler"
-)
+GLUE_ROLE_ARN = "arn:aws:iam::873851887650:role/service-role/AWSGlueServiceRole-OlistCrawler"
 
 CRAWLERS = [
     {

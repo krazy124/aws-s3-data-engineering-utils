@@ -1,49 +1,38 @@
-# monsterforge_etl.py
-# MonsterForge Industries ETL Pipeline
-# Project-specific pipeline built on reusable PySpark transformation helpers
+"""MonsterForge Industries project-specific ETL pipeline."""
 
 import logging
 from io import StringIO
 
 import boto3
 import pandas as pd
-from botocore.exceptions import ClientError, NoCredentialsError
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.functions import col, when
 
-from glue_transformations import (log_step, print_quality_report, clean_column_names,
-                                  trim_string_columns, add_missing_flag, standardize_category_column,
-                                  parse_currency_to_double, fix_negative_values_with_flag, parse_multiple_date_formats,
-                                  convert_to_integer, select_columns, )
-
-from glue_operations import create_glue_crawler
-
-
-logging.basicConfig(
-    level=logging.WARNING,
-    format="%(asctime)s - %(levelname)s - %(message)s",
+from aws_clients import run_safely
+from s3_operations import write_dataframe_to_s3_parquet
+from glue_transformations import (
+    log_step,
+    print_quality_report,
+    clean_column_names,
+    trim_string_columns,
+    add_missing_flag,
+    standardize_category_column,
+    parse_currency_to_double,
+    fix_negative_values_with_flag,
+    parse_multiple_date_formats,
+    convert_to_integer,
+    select_columns,
+    validate_required_columns,
+    normalize_empty_strings_to_null,
+    add_ingestion_timestamp,
+    add_source_file_column,
+    generate_null_count_report,
+    generate_duplicate_report,
 )
 
-
-# MF00.v1 - Run Safely
-def run_safely(action, default_return=None, error_message="Operation failed"):
-    try:
-        return action()
-
-    except NoCredentialsError:
-        logging.error("AWS credentials not configured.")
-        return default_return
-
-    except ClientError as e:
-        logging.error(f"{error_message}: {e}")
-        return default_return
-
-    except Exception as e:
-        logging.error(f"{error_message}: {e}")
-        return default_return
+logging.basicConfig(level=logging.WARNING, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
-# MF01.v1 - MonsterForge Cleaning Pipeline
 def monsterforge_cleaning_pipeline(df: DataFrame):
     """MonsterForge-specific cleaning pipeline for monsters.csv."""
 
@@ -66,7 +55,27 @@ def monsterforge_cleaning_pipeline(df: DataFrame):
     }
 
     df = clean_column_names(df)
+
+    required_columns = [
+        "monster_id",
+        "monster_name",
+        "monster_type",
+        "base_price",
+        "created_date",
+        "danger_level",
+        "status",
+    ]
+
+    validation_report = validate_required_columns(df, required_columns)
+    if not validation_report["is_valid"]:
+        raise ValueError(
+            f"Missing required MonsterForge columns: {validation_report['missing_columns']}"
+        )
+
     df = trim_string_columns(df)
+    df = normalize_empty_strings_to_null(df)
+    df = add_ingestion_timestamp(df)
+    df = add_source_file_column(df)
 
     df = add_missing_flag(df, "monster_id")
     df = add_missing_flag(df, "monster_name")
@@ -93,12 +102,13 @@ def monsterforge_cleaning_pipeline(df: DataFrame):
         "monster_name_missing_flag",
         "created_date_missing_flag",
         "base_price_corrected_flag",
+        "ingestion_timestamp",
+        "source_file",
     ]
 
     return select_columns(df, expected_columns)
 
 
-# MF02.v1 - Split Clean And Quarantine
 def split_clean_quarantine(df: DataFrame):
     """Split cleaned MonsterForge records into clean and quarantine DataFrames."""
 
@@ -123,7 +133,6 @@ def split_clean_quarantine(df: DataFrame):
     return clean_df, quarantine_df
 
 
-# MF03.v1 - Load MonsterForge Raw Data
 def load_monsterforge_raw_data(spark: SparkSession, input_path: str):
     """Load raw MonsterForge CSV data."""
     log_step("Loading Raw MonsterForge Data")
@@ -138,9 +147,11 @@ def load_monsterforge_raw_data(spark: SparkSession, input_path: str):
     )
 
 
-# MF04.v1 - Generate MonsterForge Quality Report
 def generate_quality_report(df_cleaned, clean_df, quarantine_df):
     """Generate MonsterForge data quality metrics."""
+    null_counts = generate_null_count_report(df_cleaned)
+    duplicate_report = generate_duplicate_report(df_cleaned, ["monster_id"])
+
     return {
         "total_records": df_cleaned.count(),
         "clean_records": clean_df.count(),
@@ -152,10 +163,11 @@ def generate_quality_report(df_cleaned, clean_df, quarantine_df):
         "corrected_negative_prices": df_cleaned.filter(
             col("base_price_corrected_flag")
         ).count(),
+        "duplicate_monster_ids": duplicate_report["duplicate_rows"],
+        "null_counts": null_counts,
     }
 
 
-# MF05.v1 - Upload Pandas CSV To S3
 def upload_pandas_csv_to_s3(pandas_df, bucket_name: str, s3_key: str):
     """Upload a Pandas DataFrame to S3 as a CSV file."""
 
@@ -181,7 +193,6 @@ def upload_pandas_csv_to_s3(pandas_df, bucket_name: str, s3_key: str):
     )
 
 
-# MF06.v1 - Write Clean Data To S3
 def write_clean_data_to_s3(clean_df, bucket_name: str):
     """Write clean MonsterForge records to S3 as CSV."""
     log_step("Writing Clean Data To S3")
@@ -195,7 +206,19 @@ def write_clean_data_to_s3(clean_df, bucket_name: str):
     )
 
 
-# MF07.v1 - Write Quarantine Data To S3
+def write_clean_data_to_s3_parquet(clean_df, bucket_name: str):
+    """Write clean MonsterForge records to S3 as Parquet partitioned by status."""
+    log_step("Writing Clean Data To S3 As Parquet")
+
+    return write_dataframe_to_s3_parquet(
+        df=clean_df,
+        bucket_name=bucket_name,
+        object_prefix="clean_parquet/monsters/",
+        mode="overwrite",
+        partition_by=["status"],
+    )
+
+
 def write_quarantine_data_to_s3(quarantine_df, bucket_name: str):
     """Write quarantined MonsterForge records to S3 as CSV."""
     log_step("Writing Quarantine Data To S3")
@@ -209,7 +232,6 @@ def write_quarantine_data_to_s3(quarantine_df, bucket_name: str):
     )
 
 
-# MF08.v1 - Write Quality Report To S3
 def write_quality_report_to_s3(report: dict, bucket_name: str):
     """Write MonsterForge quality report to S3 as CSV."""
     log_step("Writing Quality Report To S3")
@@ -228,13 +250,7 @@ def write_quality_report_to_s3(report: dict, bucket_name: str):
     )
 
 
-# MF09.v1 - Run MonsterForge ETL
-def run_monsterforge_etl(
-    spark: SparkSession,
-    input_path: str,
-    bucket_name: str = None,
-    preview: bool = True,
-):
+def run_monsterforge_etl(spark: SparkSession, input_path: str, bucket_name: str = None, preview: bool = True, ):
     """Run the full MonsterForge transformation, quarantine, reporting, and optional S3 output flow."""
 
     try:
@@ -300,6 +316,11 @@ def run_monsterforge_etl(
                 bucket_name,
             )
 
+            upload_results["clean_parquet"] = bool(write_clean_data_to_s3_parquet(
+                clean_df,
+                bucket_name,
+            ))
+
             failed_uploads = [
                 name
                 for name, success in upload_results.items()
@@ -316,32 +337,3 @@ def run_monsterforge_etl(
     except Exception:
         logging.exception("MonsterForge ETL failed.")
         raise
-
-
-response = create_glue_crawler(
-    crawler_name="monsterforge-quarantine-crawler",
-    database_name="monsterforge_data_lake",
-    role_arn="arn:aws:iam::873851887650:role/service-role/AWSGlueServiceRole-OlistCrawler",
-    s3_target_path="s3://wlmdatawizard-monsterforge-873851887650/quarantine/monsters/",
-    description="MonsterForge quarantine crawler",
-)
-
-# spark = (
-#     SparkSession.builder
-#     .appName("MonsterForge ETL")
-#     .getOrCreate()
-# )
-
-# spark.sparkContext.setLogLevel("ERROR")
-
-# input_path = "data/monster/MonsterForge_monsters_raw_100.csv"
-# bucket_name = "wlmdatawizard-monsterforge-873851887650"
-
-# clean_df, quarantine_df, report = run_monsterforge_etl(
-#     spark=spark,
-#     input_path=input_path,
-#     bucket_name=bucket_name,
-#     preview=True,
-# )
-
-# log_step("MonsterForge ETL Complete")

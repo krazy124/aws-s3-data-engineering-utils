@@ -1,696 +1,825 @@
 # ==================================================
-# IDENTIFIER SYSTEM
+# sep_app_refactored.py
+# Streamlit UI tied to the refactored module structure:
+#   src/aws_clients.py
+#   src/s3_operations.py
 # ==================================================
 
-# LEVEL 1
-# | s | Section
-
-# LEVEL 2
-# | a | Subsection
-
-# LEVEL 3
-# | f | Function Call
-# | b | Button
-# | i | Input Element
-# | l | List / Select Element
-# | c | Container / Layout
-# | x | Control Logic / Session State
-# | m | Message / Status Output
-# | d | Data Display / Render Output
-# | e | If / Elif Branch
-# | t | Text / Titles / Headers
-# | u | Utility / Helper Logic
-
-# LEVEL 4
-# | v | Version
-
-# EXAMPLE BREAKDOWN
-# -----------------
-
-# s4.v1 == Section 4 → Version 1
-
-# s4`l1.v1 == Section 4 → List Element 1 → Version 1
-
-# s4l1`c1.v1 == Section 4 → List Element 1 → Container 1 → Version 1
-
-# s4l1c1`b1.v1 == Section 4 → List Element 1 → Container 1 → Button 1 → Version 1
-
-# ==================================================
+import os
+import sys
+import tempfile
+from pathlib import Path
 
 import streamlit as st
-import base64
 
-from src.aws_operations import *
+# --------------------------------------------------
+# Import setup
+# --------------------------------------------------
+# This lets the app work when it lives in the project root and your modules
+# live in ./src. It also keeps imports simple inside the refactored modules,
+# which currently use imports like: from aws_clients import ...
+PROJECT_ROOT = Path(__file__).resolve().parent
+SRC_DIR = PROJECT_ROOT / "src"
+
+if SRC_DIR.exists() and str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
+
+try:
+    from aws_clients import get_s3_client
+    from s3_operations import (
+        create_bucket,
+        create_folder,
+        delete_bucket,
+        delete_file,
+        delete_folder,
+        download_file,
+        download_folder,
+        empty_bucket,
+        list_buckets,
+        list_files,
+        list_folders,
+        move_file,
+        move_folder,
+        upload_file,
+    )
+except ModuleNotFoundError as exc:
+    st.error(
+        "Could not import the refactored AWS modules. Make sure these files exist in your src folder: "
+        "aws_clients.py and s3_operations.py."
+    )
+    st.exception(exc)
+    st.stop()
 
 
-# ====== s1.v1 - Streamlit Page Configuration Section ======
-# s1`u1.v1
-st.set_page_config(page_title="AWS S3 Utility Dashboard", layout="wide")
+# ====== s1.v1 - Page Setup ======
 
+st.set_page_config(
+    page_title="AWS S3 Utility",
+    layout="wide",
+)
+
+
+# ====== s2.v1 - AWS Connection ======
 
 s3_client = get_s3_client()
 
 if s3_client is None:
     st.stop()
 
-# ====== s1`a1.v1 - Background Image Styling Section ======
-# s1a1`u1.v1
+
+# ====== s2b1.v1 - Session State Setup ======
+
+if "selected_location" not in st.session_state:
+    st.session_state.selected_location = None
+
+if "selected_files" not in st.session_state:
+    st.session_state.selected_files = []
+
+if "show_create_folder" not in st.session_state:
+    st.session_state.show_create_folder = False
 
 
-def get_base64_image(image_path):
-    with open(image_path, "rb") as img_file:
-        return base64.b64encode(img_file.read()).decode()
+# ====== s3.v1 - App Header ======
+
+st.title("AWS S3 Utility")
+st.caption("Separation of concerns version — powered by aws_clients.py and s3_operations.py")
 
 
-# s1a1`f1.v1
-background_image = get_base64_image("assets/background.png")
+# ====== s3b1.v1 - Helper Functions ======
 
-# s1a1`d1.v1
-st.markdown(
-    f"""
-    <style>
-
-    .stApp {{
-        background-image: url("data:image/png;base64,{background_image}");
-        background-size: cover;
-        background-position: center;
-        background-attachment: fixed;
-        background-repeat: no-repeat;
-        background-color: rgba(0, 0, 0, 0.25);
-        background-blend-mode: overlay;
-    }}
-
-    .main .block-container {{
-        max-width: 1200px;
-        padding-top: 2rem;
-        padding-bottom: 2rem;
-    }}
-
-    div[data-testid="stVerticalBlock"] > div:has(div.element-container) {{
-        background: rgba(8, 15, 30, 0.72);
-        border-radius: 16px;
-        padding: 1rem;
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.25);
-    }}
-
-    .stButton > button {{
-        background: rgba(15, 23, 42, 0.92);
-        color: #f8fafc;
-        border: 1px solid rgba(255, 255, 255, 0.18);
-        border-radius: 8px;
-        font-weight: 600;
-        transition: all 0.2s ease;
-    }}
-
-    .stButton > button:hover {{
-        border-color: #4da3ff;
-        box-shadow: 0 0 12px rgba(77, 163, 255, 0.45);
-        transform: translateY(-1px);
-        color: #ffffff;
-    }}
-
-    .stButton > button:active {{
-        transform: translateY(0px);
-        border-color: #ff9900;
-    }}
-
-    h1, h2, h3, h4, h5, h6 {{
-        color: #f8fafc !important;
-        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
-    }}
-
-    p, label, span {{
-        color: #e5ecff !important;
-    }}
-
-    div[data-baseweb="select"] > div {{
-        background-color: rgba(15, 23, 42, 0.95);
-        color: #f8fafc;
-        border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.18);
-    }}
-
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+def get_location_prefix(location):
+    if location == "Bucket Root" or location is None:
+        return ""
+    return location
 
 
-# ====== s2.v1 - Streamlit Header Section ======
-# s2`t1.v1
-st.title("AWS S3 Utility Dashboard")
-
-# s2`t2.v1
-st.caption("Streamlit control panel for reusable AWS S3 utility functions.")
+def save_uploaded_file_temporarily(uploaded_file):
+    with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+        temp_file.write(uploaded_file.getbuffer())
+        return temp_file.name
 
 
-# ====== s3.v1 - Bucket Action Section ======
-# s3`t1.v1
-st.header("Bucket Setup")
+# ====== s4.v1 - Bucket Section ======
 
-# s3`c1.v1
-col1, col2 = st.columns(2)
+with st.container(border=True):
 
-# s3c1`b1.v1
-with col1:
-    select_bucket_clicked = st.button(
-        "Select Existing Bucket", use_container_width=True)
+    st.subheader("Bucket")
 
-# s3c1`b2.v1
-with col2:
-    create_bucket_clicked = st.button(
-        "Create New Bucket", use_container_width=True)
+    bucket_select_col, bucket_action_col = st.columns([4, 1])
+
+    with bucket_select_col:
+        buckets = list_buckets()
+
+        if buckets:
+            selected_bucket = st.selectbox(
+                "Select Bucket",
+                buckets,
+                index=None,
+                placeholder="Select Bucket",
+            )
+        else:
+            st.warning("No buckets found.")
+            selected_bucket = None
+
+    with bucket_action_col:
+        st.write("")
+
+        create_bucket_clicked = st.button(
+            "Create New Bucket",
+            use_container_width=True,
+        )
+
+        empty_bucket_clicked = st.button(
+            "Empty Bucket",
+            use_container_width=True,
+            disabled=selected_bucket is None,
+        )
+
+        delete_bucket_clicked = st.button(
+            "Delete Bucket",
+            use_container_width=True,
+            disabled=selected_bucket is None,
+        )
+
+    if create_bucket_clicked:
+
+        st.divider()
+        st.subheader("Create New Bucket")
+
+        new_bucket_name = st.text_input(
+            "Bucket Name",
+            placeholder="example: my-data-bucket",
+        )
+
+        region = st.selectbox(
+            "AWS Region",
+            ["us-east-1", "us-east-2", "us-west-1", "us-west-2"],
+        )
+
+        if st.button("Confirm Create Bucket"):
+
+            if new_bucket_name:
+                created = create_bucket(
+                    bucket_name=new_bucket_name,
+                    region=region,
+                )
+
+                if created:
+                    st.success(
+                        f'Bucket "{new_bucket_name}" created successfully.'
+                    )
+                    st.rerun()
+                else:
+                    st.error("Bucket was not created.")
+
+            else:
+                st.warning("Enter a bucket name first.")
+
+    if empty_bucket_clicked:
+        emptied = empty_bucket(selected_bucket)
+
+        if emptied:
+            st.success(f'Bucket "{selected_bucket}" emptied successfully.')
+            st.rerun()
+        else:
+            st.error("Bucket was not emptied.")
+
+    if delete_bucket_clicked:
+        deleted = delete_bucket(selected_bucket)
+
+        if deleted:
+            st.success(f'Bucket "{selected_bucket}" deleted successfully.')
+            st.rerun()
+        else:
+            st.error("Bucket was not deleted. Empty the bucket first, then try again.")
 
 
-# ====== s3`x1.v1 - Bucket Mode Session State Control ======
-# s3x1`e1.v1
-if "bucket_mode" not in st.session_state:
-    st.session_state.bucket_mode = None
+# ====== s5.v1 - Folder / Root Section ======
 
-# s3x1`e2.v1
-if select_bucket_clicked:
-    st.session_state.bucket_mode = "select"
+if selected_bucket:
 
-# s3x1`e3.v1
-if create_bucket_clicked:
-    st.session_state.bucket_mode = "create"
+    with st.container(border=True):
 
+        st.subheader("Folder / Root")
 
-# ====== s4.v3 - Existing Bucket Workflow Section ======
-# s4`e1.v1
-if st.session_state.bucket_mode == "select":
-    # s4`t1.v1
-    st.subheader("Select Existing Bucket")
+        folder_select_col, folder_action_col = st.columns([4, 1])
 
-    # s4`f1.v1
-    buckets = bucket_list()
+        with folder_select_col:
 
-    # s4e1`e1.v1
-    if buckets:
+            folders = list_folders(selected_bucket)
+            location_options = ["Bucket Root"] + folders
 
-        # s4`l1.v1
-        selected_bucket = st.selectbox("Choose a Bucket", buckets)
+            selected_location = st.selectbox(
+                "Select Folder / Root",
+                location_options,
+                index=None,
+                placeholder="Select Folder / Root",
+            )
 
-        # s4l1`t1.v1
-        st.subheader("Bucket Actions")
+            if selected_location:
+                st.session_state.selected_location = selected_location
 
-        # s4l1`c1.v3
-        col3, col4, col5, col5b = st.columns(4)
+        folder_selected = st.session_state.selected_location is not None
+        bucket_root_selected = st.session_state.selected_location == "Bucket Root"
+        real_folder_selected = folder_selected and not bucket_root_selected
 
-        # s4l1c1`b1.v3
-        with col3:
-            list_files_clicked = st.button(
-                "List Objects", use_container_width=True)
+        with folder_action_col:
+            st.write("")
 
-        # s4l1c1`b2.v2
-        with col4:
-            list_prefixes_clicked = st.button(
-                "List Folders (Prefixes)", use_container_width=True)
+            if st.button("Create New Folder", use_container_width=True):
+                st.session_state.show_create_folder = True
 
-        # s4l1c1`b3.v2
-        with col5:
-            create_folder_clicked = st.button(
-                "Create Folder (Prefix)", use_container_width=True)
+            move_folder_clicked = st.button(
+                "Move Folder",
+                use_container_width=True,
+                disabled=not real_folder_selected,
+            )
 
-        # s4l1c1`b4.v1
-        with col5b:
-            delete_folder_clicked = st.button(
-                "Delete Folder (Prefix)", use_container_width=True)
+            upload_here_clicked = st.button(
+                "Upload to Folder",
+                use_container_width=True,
+                disabled=not folder_selected,
+            )
 
-        # s4l1`c2.v2
-        col6, col7 = st.columns(2)
-
-        # s4l1c2`b1.v2
-        with col6:
-            upload_folder_clicked = st.button(
-                "Upload Folder", use_container_width=True)
-
-        # s4l1c2`b2.v2
-        with col7:
             download_folder_clicked = st.button(
-                "Download Folder", use_container_width=True)
+                "Download Folder",
+                use_container_width=True,
+                disabled=not real_folder_selected,
+            )
 
-        # ====== s4`a1.v1 - Bucket Danger Zone Section ======
-        # s4a1`t1.v1
-        st.subheader("Danger Zone")
+            delete_folder_clicked = st.button(
+                "Delete Folder",
+                use_container_width=True,
+                disabled=not real_folder_selected,
+            )
 
-        # s4a1`c1.v2
-        col8, col9 = st.columns(2)
+        if st.session_state.show_create_folder:
 
-        # s4a1c1`b1.v2
-        with col8:
-            empty_bucket_clicked = st.button(
-                "Empty Bucket", use_container_width=True)
+            st.divider()
+            st.subheader("Create New Folder")
 
-        # s4a1c1`b2.v2
-        with col9:
-            delete_bucket_clicked = st.button(
-                "Delete Bucket", use_container_width=True)
+            new_folder_name = st.text_input(
+                "Folder Prefix Name",
+                placeholder="example: raw/ or processed/",
+            )
 
-        # ====== s4`x1.v2 - Bucket Action Mode Control ======
-        # s4x1`e1.v1
-        if list_files_clicked:
-            st.session_state.bucket_action = "list_files"
+            if st.button("Confirm Create Folder"):
 
-        # s4x1`e2.v1
-        if list_prefixes_clicked:
-            st.session_state.bucket_action = "list_prefixes"
+                if new_folder_name:
 
-        # s4x1`e3.v1
-        if create_folder_clicked:
-            st.session_state.bucket_action = "create_folder"
+                    if not new_folder_name.endswith("/"):
+                        new_folder_name += "/"
 
-        # s4x1`e3b.v1
-        if delete_folder_clicked:
-            st.session_state.bucket_action = "delete_folder"
+                    created_folder = create_folder(
+                        selected_bucket,
+                        new_folder_name,
+                    )
 
-        # s4x1`e4.v1
-        if upload_folder_clicked:
-            st.session_state.bucket_action = "upload_folder"
+                    if created_folder:
+                        st.session_state.selected_location = new_folder_name
+                        st.session_state.show_create_folder = False
 
-        # s4x1`e5.v1
-        if download_folder_clicked:
-            st.session_state.bucket_action = "download_folder"
-
-        # s4x1`e6.v1
-        if empty_bucket_clicked:
-            st.session_state.bucket_action = "empty_bucket"
-
-        # s4x1`e7.v1
-        if delete_bucket_clicked:
-            st.session_state.bucket_action = "delete_bucket"
-
-        # ====== s4`a2.v2 - Bucket Action Output Section ======
-        # s4a2`x1.v1
-        if "bucket_action" in st.session_state:
-
-            # s4a2`e1.v1
-            if st.session_state.bucket_action == "list_files":
-
-                # s4a2`f1.v2
-                files = list_files(selected_bucket)
-
-                # s4a2e1`e1.v1
-                if files:
-
-                    # s4a2f1`m1.v2
-                    st.success(f"Found {len(files)} file(s).")
-
-                    # s4a2f1`d1.v2
-                    for file in files:
-                        st.write(file)
-
-                else:
-
-                    # s4a2f1`m2.v2
-                    st.warning("No files found in this bucket.")
-
-            # s4a2`e2.v1
-            elif st.session_state.bucket_action == "list_prefixes":
-
-                # s4a2`f2.v1
-                folders = list_folders(selected_bucket)
-
-                # s4a2e2`e1.v1
-                if folders:
-
-                    # s4a2f2`m1.v1
-                    st.success(f"Found {len(folders)} folder prefix(es).")
-
-                    # s4a2f2`d1.v1
-                    for folder in folders:
-                        st.write(folder)
-
-                else:
-
-                    # s4a2f2`m2.v1
-                    st.warning("No folder prefixes found in this bucket.")
-
-            # s4a2`e3.v1
-            elif st.session_state.bucket_action == "create_folder":
-
-                # s4a2`i1.v1
-                new_folder_name = st.text_input(
-                    "Folder Prefix Name",
-                    placeholder="example: raw/ or processed/"
-                )
-
-                # s4a2i1`b1.v1
-                # s4a2e3`e1.v1
-                if st.button("Create Folder Prefix", use_container_width=True):
-                    if new_folder_name:
-
-                        # s4a2i1b1`f1.v1
-                        created_folder = create_folder(
-                            selected_bucket,
-                            new_folder_name
+                        st.success(
+                            f'Folder "{new_folder_name}" created successfully.'
                         )
 
-                        if created_folder:
-                            # s4a2i1b1f1`m1.v1
-                            st.success(
-                                f'Folder prefix "{new_folder_name}" created successfully.'
-                            )
-                        else:
-                            # s4a2i1b1f1`m2.v1
-                            st.error(
-                                f'Folder prefix "{new_folder_name}" was not created.'
-                            )
+                        st.rerun()
                     else:
-                        # s4a2i1b1`m1.v1
-                        st.warning("Enter a folder prefix name first.")
+                        st.error("Folder was not created.")
 
-            # s4a2`e3b.v1
-            elif st.session_state.bucket_action == "delete_folder":
+                else:
+                    st.warning("Enter a folder name first.")
 
-                # s4a2`t2b.v1
-                st.subheader("Delete Folder Prefix")
+        # ====== s5b1.v1 - Move Folder Action ======
 
-                # s4a2`f2b.v2
-                available_delete_folders = list_all_folders(selected_bucket)
+        if st.session_state.get("move_folder_success_message"):
+            st.success(st.session_state.move_folder_success_message)
+            st.session_state.move_folder_success_message = None
 
-                # s4a2e3b`e1.v1
-                if available_delete_folders:
+        if move_folder_clicked:
+            st.session_state.show_move_folder = True
 
-                    # s4a2`l1b.v1
-                    selected_folder_to_delete = st.selectbox(
-                        "Choose Folder Prefix to Delete",
-                        available_delete_folders
-                    )
+        if st.session_state.get("show_move_folder", False):
 
-                    # s4a2`i1b.v1
-                    confirm_delete_folder = st.checkbox(
-                        f'I understand this will delete everything inside "{selected_folder_to_delete}".'
-                    )
+            st.divider()
+            st.subheader("Move Folder")
 
-                    # s4a2l1b`b1.v1
-                    if st.button("Confirm Delete Folder", use_container_width=True):
+            current_folder = st.session_state.selected_location
 
-                        # s4a2e3bl1b`e1.v1
-                        if confirm_delete_folder:
+            destination_options = [
+                folder for folder in list_folders(selected_bucket)
+                if folder != current_folder
+            ]
 
-                            # s4a2l1bb1`f1.v1
-                            deleted = delete_folder(
+            destination_options = ["Bucket Root"] + destination_options
+
+            destination_location = st.selectbox(
+                "Move Folder To",
+                destination_options,
+                index=None,
+                placeholder="Select Destination Folder / Root",
+            )
+
+            confirm_move_folder_col, cancel_move_folder_col = st.columns(2)
+
+            with confirm_move_folder_col:
+
+                if st.button("Confirm Move Folder", use_container_width=True):
+
+                    if destination_location:
+
+                        source_folder = current_folder
+                        folder_name = source_folder.rstrip("/").split("/")[-1]
+
+                        if destination_location == "Bucket Root":
+                            destination_folder = f"{folder_name}/"
+                        else:
+                            destination_folder = (
+                                f"{destination_location}{folder_name}/"
+                            )
+
+                        moved_folder = move_folder(
+                            selected_bucket,
+                            source_folder,
+                            selected_bucket,
+                            destination_folder,
+                        )
+
+                        if moved_folder:
+                            st.session_state.show_move_folder = False
+                            st.session_state.selected_location = destination_folder
+                            st.session_state.move_folder_success_message = (
+                                f'Folder "{source_folder}" moved successfully.'
+                            )
+
+                            st.rerun()
+                        else:
+                            st.error("Folder was not moved.")
+
+                    else:
+                        st.warning("Select a destination folder first.")
+
+            with cancel_move_folder_col:
+
+                if st.button("Cancel Move Folder", use_container_width=True):
+
+                    st.session_state.show_move_folder = False
+                    st.info("Move folder canceled.")
+                    st.rerun()
+
+        # ====== s5b2.v1 - Upload To Folder Action ======
+
+        if upload_here_clicked:
+            st.session_state.show_upload_folder = True
+
+        if st.session_state.get("show_upload_folder", False):
+
+            st.divider()
+            st.subheader("Upload To Folder")
+
+            uploaded_files = st.file_uploader(
+                "Select File(s)",
+                accept_multiple_files=True,
+            )
+
+            confirm_upload_col, cancel_upload_col = st.columns(2)
+
+            with confirm_upload_col:
+
+                if st.button("Confirm Upload", use_container_width=True):
+
+                    if uploaded_files:
+
+                        upload_prefix = get_location_prefix(
+                            st.session_state.selected_location
+                        )
+
+                        successful_uploads = []
+                        failed_uploads = []
+
+                        for uploaded_file in uploaded_files:
+
+                            object_name = f"{upload_prefix}{uploaded_file.name}"
+                            temp_file_path = save_uploaded_file_temporarily(
+                                uploaded_file
+                            )
+
+                            uploaded = upload_file(
                                 selected_bucket,
-                                selected_folder_to_delete
+                                temp_file_path,
+                                object_name,
                             )
 
-                            # s4a2e3bl1bb1`e1.v1
-                            if deleted:
+                            os.remove(temp_file_path)
 
-                                # s4a2l1bb1f1`m1.v1
-                                st.success(
-                                    f'Folder prefix "{selected_folder_to_delete}" deleted successfully.'
-                                )
-
+                            if uploaded:
+                                successful_uploads.append(uploaded_file.name)
                             else:
+                                failed_uploads.append(uploaded_file.name)
 
-                                # s4a2l1bb1f1`m2.v1
-                                st.error(
-                                    f'Folder prefix "{selected_folder_to_delete}" was not deleted.'
-                                )
+                        if len(failed_uploads) == 0:
+                            st.session_state.show_upload_folder = False
 
-                        else:
-
-                            # s4a2l1bb1`m1.v1
-                            st.warning("Check the confirmation box first.")
-
-                else:
-
-                    # s4a2f2b`m1.v1
-                    st.warning("No folder prefixes found in this bucket.")
-
-            # s4a2e4.v2
-            elif st.session_state.bucket_action == "upload_folder":
-
-                # s4a2`t2.v3
-                st.subheader("Upload Local Folder")
-
-                # s4a2`i2.v1
-                local_upload_path = st.text_input(
-                    "Local Folder Path",
-                    placeholder=r"example: C:\Users\willi\Desktop\s3_upload_test"
-                )
-
-                # s4a2`f4.v1
-                available_upload_folders = list_folders(selected_bucket)
-
-                # s4a2`l3.v1
-                if available_upload_folders:
-                    s3_upload_prefix = st.selectbox(
-                        "Choose S3 Folder",
-                        available_upload_folders
-                    )
-                else:
-                    s3_upload_prefix = st.text_input(
-                        "S3 Folder",
-                        placeholder="example: raw/ or uploads/test/"
-                    )
-
-                # s4a2`i5.v2
-                upload_mode = st.radio(
-                    "Upload Mode",
-                    [
-                        "Upload the folder and its files",
-                        "Upload only the files"
-                    ]
-                )
-
-                # s4a2`b2.v3
-                if st.button("Confirm Upload Folder", use_container_width=True):
-
-                    # s4a2e4b2`e1.v1
-                    if not local_upload_path:
-                        st.warning("Enter a local folder path first.")
-
-                    # s4a2e4b2`e2.v1
-                    elif not s3_upload_prefix:
-                        st.warning("Choose or enter an S3 folder first.")
-
-                    # s4a2e4b2`e3.v1
-                    else:
-
-                        # s4a2b2`x1.v1
-                        include_root_folder = (
-                            upload_mode == "Upload the folder and its files"
-                        )
-
-                        # s4a2b2`f1.v3
-                        uploaded = upload_folder(
-                            selected_bucket,
-                            s3_upload_prefix,
-                            local_upload_path,
-                            include_root_folder=include_root_folder
-                        )
-
-                        # s4a2e4b2e3`e1.v1
-                        if uploaded:
-
-                            # s4a2b2f1`m1.v3
                             st.success(
-                                f'Uploaded "{local_upload_path}" '
-                                f'to "{selected_bucket}/{s3_upload_prefix}".'
+                                f'{len(successful_uploads)} file(s) uploaded successfully.'
                             )
 
-                        # s4a2e4b2e3`e2.v1
+                            st.rerun()
                         else:
-
-                            # s4a2b2f1`m2.v3
                             st.error(
-                                "Folder was not uploaded. "
-                                "Check the local path, AWS permissions, or logs."
+                                f'{len(failed_uploads)} file(s) failed to upload.'
                             )
 
-            # s4a2`e5.v1
-            elif st.session_state.bucket_action == "download_folder":
+                    else:
+                        st.warning("Select at least one file first.")
 
-                # s4a2`t3.v1
-                st.subheader("Download S3 Prefix to Local Folder")
+            with cancel_upload_col:
 
-                # s4a2`f3.v2
-                available_folders = list_all_folders(selected_bucket)
+                if st.button("Cancel Upload", use_container_width=True):
 
-                # s4a2`l2.v1
-                # s4a2e5`e1.v1
-                if available_folders:
-                    s3_download_prefix = st.selectbox(
-                        "Choose S3 Folder Prefix",
-                        available_folders
-                    )
-                else:
-                    s3_download_prefix = st.text_input(
-                        "S3 Folder Prefix",
-                        placeholder="example: raw/ or processed/"
-                    )
+                    st.session_state.show_upload_folder = False
+                    st.info("Upload canceled.")
+                    st.rerun()
 
-                # s4a2`i4.v1
-                local_download_path = st.text_input(
-                    "Local Download Folder Path",
-                    placeholder=r"example: C:\Users\willi\Desktop\s3_download_test"
-                )
+        # ====== s5b3.v1 - Download Folder Action ======
 
-                # s4a2`i6.v1
-                download_mode = st.radio(
-                    "Download Mode",
-                    [
-                        "Download the folder and its files",
-                        "Download only the files"
-                    ]
-                )
+        if download_folder_clicked:
+            st.session_state.show_download_folder = True
 
-                # s4a2`m4.v2
-                st.info(
-                    "This will download every object under the selected S3 prefix into the local folder path you enter."
-                )
+        if st.session_state.get("show_download_folder", False):
 
-                # s4a2`b3.v1
-                # s4a2e5`e2.v1
+            st.divider()
+            st.subheader("Download Folder")
+
+            local_download_path = st.text_input(
+                "Local Download Folder Path",
+                placeholder="example: C:/Users/willi/Downloads",
+            )
+
+            confirm_download_folder_col, cancel_download_folder_col = st.columns(2)
+
+            with confirm_download_folder_col:
+
                 if st.button("Confirm Download Folder", use_container_width=True):
-                    if not s3_download_prefix:
-                        st.warning(
-                            "Enter or choose an S3 folder prefix first.")
 
-                    elif not local_download_path:
+                    if local_download_path:
+
+                        folder_to_download = st.session_state.selected_location
+
+                        downloaded_folder = download_folder(
+                            selected_bucket,
+                            folder_to_download,
+                            local_download_path,
+                        )
+
+                        if downloaded_folder:
+                            st.session_state.show_download_folder = False
+
+                            st.success(
+                                f'Folder "{folder_to_download}" downloaded successfully.'
+                            )
+                        else:
+                            st.error("Folder was not downloaded.")
+
+                    else:
                         st.warning("Enter a local download folder path first.")
 
-                    else:
-                        # s4a2b3`x1.v1
-                        include_root_folder = (
-                            download_mode == "Download the folder and its files"
+            with cancel_download_folder_col:
+
+                if st.button("Cancel Download Folder", use_container_width=True):
+
+                    st.session_state.show_download_folder = False
+                    st.info("Download folder canceled.")
+                    st.rerun()
+
+        # ====== s5b4.v1 - Delete Folder Confirmation Action ======
+
+        if st.session_state.get("folder_delete_success_message"):
+            st.success(st.session_state.folder_delete_success_message)
+            st.session_state.folder_delete_success_message = None
+
+        if delete_folder_clicked:
+            st.session_state.confirm_delete_folder = True
+
+        if st.session_state.get("confirm_delete_folder", False):
+
+            st.warning(
+                f'Proceed to delete this folder?\n\n"{st.session_state.selected_location}"'
+            )
+
+            confirm_delete_folder_col, cancel_delete_folder_col = st.columns(2)
+
+            with confirm_delete_folder_col:
+
+                if st.button("Yes, Delete Folder", use_container_width=True):
+
+                    folder_to_delete = st.session_state.selected_location
+
+                    deleted_folder = delete_folder(
+                        selected_bucket,
+                        folder_to_delete,
+                    )
+
+                    if deleted_folder:
+                        st.session_state.confirm_delete_folder = False
+                        st.session_state.selected_location = None
+                        st.session_state.folder_delete_success_message = (
+                            f'Folder "{folder_to_delete}" was successfully deleted.'
                         )
 
-                        # s4a2b3`f1.v2
-                        downloaded = download_folder(
+                        st.rerun()
+                    else:
+                        st.error("Folder was not deleted.")
+
+            with cancel_delete_folder_col:
+
+                if st.button("No, Cancel", use_container_width=True):
+
+                    st.session_state.confirm_delete_folder = False
+                    st.info("Delete folder action canceled.")
+                    st.rerun()
+
+
+# ====== s6.v1 - File / Object Section ======
+
+if selected_bucket and st.session_state.selected_location:
+
+    with st.container(border=True):
+
+        st.subheader("File / Object")
+
+        selected_location = st.session_state.selected_location
+        selected_prefix = get_location_prefix(selected_location)
+        all_files = list_files(selected_bucket)
+
+        if selected_location == "Bucket Root":
+
+            files = [
+                file for file in all_files
+                if "/" not in file
+            ]
+
+            display_to_full_path = {
+                file: file for file in files
+            }
+
+        else:
+
+            files = [
+                file for file in all_files
+                if file.startswith(selected_prefix)
+                and file != selected_prefix
+                and not file.endswith("/")
+            ]
+
+            display_to_full_path = {
+                file.replace(selected_prefix, "", 1): file
+                for file in files
+            }
+
+        file_select_col, file_action_col = st.columns([4, 1])
+
+        with file_select_col:
+
+            selected_display_files = st.multiselect(
+                "Select File(s) / Object(s)",
+                list(display_to_full_path.keys()),
+                placeholder="Select File(s) / Object(s)",
+            )
+
+            selected_files = [
+                display_to_full_path[file]
+                for file in selected_display_files
+            ]
+
+            if selected_files:
+                st.session_state.selected_files = selected_files
+            else:
+                st.session_state.selected_files = []
+
+        files_selected = len(st.session_state.selected_files) > 0
+
+        with file_action_col:
+            st.write("")
+
+            move_file_clicked = st.button(
+                "Move File(s)",
+                use_container_width=True,
+                disabled=not files_selected,
+            )
+
+            download_file_clicked = st.button(
+                "Download File(s)",
+                use_container_width=True,
+                disabled=not files_selected,
+            )
+
+            delete_file_clicked = st.button(
+                "Delete File(s)",
+                use_container_width=True,
+                disabled=not files_selected,
+            )
+
+        # ====== s6b1.v1 - Move File(s) Action ======
+
+        if st.session_state.get("move_files_success_message"):
+            st.success(st.session_state.move_files_success_message)
+            st.session_state.move_files_success_message = None
+
+        if move_file_clicked:
+            st.session_state.show_move_files = True
+
+        if st.session_state.get("show_move_files", False):
+
+            st.divider()
+            st.subheader("Move Selected File(s)")
+
+            destination_options = ["Bucket Root"] + list_folders(selected_bucket)
+
+            destination_location = st.selectbox(
+                "Move To",
+                destination_options,
+                index=None,
+                placeholder="Select Destination Folder / Root",
+            )
+
+            confirm_move_files_col, cancel_move_files_col = st.columns(2)
+
+            with confirm_move_files_col:
+
+                if st.button("Confirm Move File(s)", use_container_width=True):
+
+                    if destination_location:
+
+                        destination_prefix = get_location_prefix(destination_location)
+                        files_to_move = st.session_state.selected_files.copy()
+
+                        moved_files = []
+                        failed_files = []
+
+                        for file in files_to_move:
+
+                            file_name = os.path.basename(file)
+
+                            destination_object_name = (
+                                f"{destination_prefix}{file_name}"
+                            )
+
+                            moved = move_file(
+                                selected_bucket,
+                                file,
+                                selected_bucket,
+                                destination_object_name,
+                            )
+
+                            if moved:
+                                moved_files.append(file)
+                            else:
+                                failed_files.append(file)
+
+                        if len(failed_files) == 0:
+                            st.session_state.show_move_files = False
+                            st.session_state.selected_files = []
+                            st.session_state.move_files_success_message = (
+                                "Selected file(s) moved successfully."
+                            )
+
+                            st.rerun()
+                        else:
+                            st.error(
+                                f'{len(failed_files)} selected file(s) were not moved.'
+                            )
+
+                    else:
+                        st.warning("Select a destination folder first.")
+
+            with cancel_move_files_col:
+
+                if st.button("Cancel Move", use_container_width=True):
+
+                    st.session_state.show_move_files = False
+                    st.info("Move canceled.")
+                    st.rerun()
+
+        # ====== s6b2.v1 - Download File(s) Action ======
+
+        if download_file_clicked:
+            st.session_state.show_download_files = True
+
+        if st.session_state.get("show_download_files", False):
+
+            st.divider()
+            st.subheader("Download Selected File(s)")
+
+            local_download_path = st.text_input(
+                "Local Download Folder Path",
+                placeholder="example: C:/Users/willi/Downloads",
+            )
+
+            confirm_download_files_col, cancel_download_files_col = st.columns(2)
+
+            with confirm_download_files_col:
+
+                if st.button("Confirm Download File(s)", use_container_width=True):
+
+                    if local_download_path:
+
+                        downloaded_files = []
+                        failed_files = []
+
+                        for file in st.session_state.selected_files:
+
+                            local_file_path = os.path.join(
+                                local_download_path,
+                                os.path.basename(file),
+                            )
+
+                            downloaded = download_file(
+                                selected_bucket,
+                                file,
+                                local_file_path,
+                            )
+
+                            if downloaded:
+                                downloaded_files.append(file)
+                            else:
+                                failed_files.append(file)
+
+                        if len(failed_files) == 0:
+                            st.session_state.show_download_files = False
+
+                            st.success(
+                                "Selected file(s) downloaded successfully."
+                            )
+                        else:
+                            st.error(
+                                f'{len(failed_files)} selected file(s) were not downloaded.'
+                            )
+
+                    else:
+                        st.warning("Enter a local download folder path first.")
+
+            with cancel_download_files_col:
+
+                if st.button("Cancel Download", use_container_width=True):
+
+                    st.session_state.show_download_files = False
+                    st.info("Download canceled.")
+                    st.rerun()
+
+        # ====== s6b3.v1 - Delete File(s) Confirmation Action ======
+
+        if delete_file_clicked:
+            st.session_state.confirm_delete_files = True
+
+        if st.session_state.get("confirm_delete_files", False):
+
+            st.warning("Proceed to delete this object?")
+
+            for file in st.session_state.selected_files:
+                st.write(f"- {file}")
+
+            confirm_delete_files_col, cancel_delete_files_col = st.columns(2)
+
+            with confirm_delete_files_col:
+
+                if st.button("Yes, Delete File(s)", use_container_width=True):
+
+                    files_to_delete = st.session_state.selected_files.copy()
+
+                    deleted_files = []
+                    failed_files = []
+
+                    for file in files_to_delete:
+
+                        deleted = delete_file(
                             selected_bucket,
-                            s3_download_prefix,
-                            local_download_path,
-                            include_root_folder=include_root_folder
+                            file,
                         )
-
-                        if downloaded:
-                            st.success(
-                                f'Downloaded "{selected_bucket}/{s3_download_prefix}" to "{local_download_path}".'
-                            )
-                        else:
-                            st.error(
-                                "Folder was not downloaded. Check the S3 prefix, AWS permissions, or logs."
-                            )
-
-            # s4a2`e6.v1
-            elif st.session_state.bucket_action == "empty_bucket":
-
-                # s4a2`m5.v2
-                st.warning(
-                    f'You are about to empty bucket "{selected_bucket}".'
-                )
-
-                # s4a2m5`i1.v1
-                confirm_empty_bucket = st.checkbox(
-                    f'I understand this will delete all objects in "{selected_bucket}".'
-                )
-
-                # s4a2m5`b1.v1
-                # s4a2e6`e1.v1
-                if st.button("Confirm Empty Bucket", use_container_width=True):
-                    if confirm_empty_bucket:
-
-                        # s4a2m5b1`f1.v1
-                        emptied = empty_bucket(selected_bucket)
-
-                        if emptied:
-                            # s4a2m5b1f1`m1.v1
-                            st.success(
-                                f'Bucket "{selected_bucket}" emptied successfully.'
-                            )
-                        else:
-                            # s4a2m5b1f1`m2.v1
-                            st.error(
-                                f'Bucket "{selected_bucket}" was not emptied.'
-                            )
-                    else:
-                        # s4a2m5b1`m1.v1
-                        st.warning("Check the confirmation box first.")
-
-            # s4a2`e7.v1
-            elif st.session_state.bucket_action == "delete_bucket":
-
-                # s4a2`m6.v2
-                st.warning(
-                    f'You are about to delete bucket "{selected_bucket}".'
-                )
-
-                # s4a2m6`i1.v1
-                confirm_delete_bucket = st.checkbox(
-                    f'I understand this will permanently delete bucket "{selected_bucket}".'
-                )
-
-                # s4a2m6`b1.v1
-                # s4a2e7`e1.v1
-                if st.button("Confirm Delete Bucket", use_container_width=True):
-                    if confirm_delete_bucket:
-
-                        # s4a2m6b1`f1.v1
-                        deleted = delete_bucket(selected_bucket)
 
                         if deleted:
-                            # s4a2m6b1f1`m1.v1
-                            st.success(
-                                f'Bucket "{selected_bucket}" deleted successfully.'
-                            )
-
-                            # s4a2m6b1f1`x1.v1
-                            st.session_state.bucket_action = None
-
+                            deleted_files.append(file)
                         else:
-                            # s4a2m6b1f1`m2.v1
-                            st.error(
-                                f'Bucket "{selected_bucket}" was not deleted. Empty the bucket first, then try again.'
-                            )
+                            failed_files.append(file)
+
+                    if len(failed_files) == 0:
+                        st.session_state.confirm_delete_files = False
+                        st.session_state.selected_files = []
+
+                        st.success(
+                            "Selected object(s) were successfully deleted."
+                        )
+
+                        st.rerun()
                     else:
-                        # s4a2m6b1`m1.v1
-                        st.warning("Check the confirmation box first.")
+                        st.error(
+                            f'{len(failed_files)} selected object(s) were not deleted.'
+                        )
 
-    else:
+            with cancel_delete_files_col:
 
-        # s4`m1.v1
-        st.error("No buckets found or unable to connect to AWS.")
+                if st.button("No, Cancel", use_container_width=True):
 
-
-# ====== s5.v2 - Create Bucket Workflow Section ======
-# s5`e1.v1
-elif st.session_state.bucket_mode == "create":
-    # s5`t1.v1
-    st.subheader("Create New Bucket")
-
-    # s5`x1.v1
-    # s5e1`e1.v1
-    if "recommended_bucket_name" not in st.session_state:
-        st.session_state.recommended_bucket_name = "wlm-s3-utils-test-873851887650-us-east-1"
-
-    # s5`i1.v2
-    new_bucket_name = st.text_input(
-        "New Bucket Name", value=st.session_state.recommended_bucket_name)
-
-    # s5`l1.v1
-    region = st.selectbox(
-        "AWS Region", ["us-east-1", "us-east-2", "us-west-1", "us-west-2"])
-
-    # s5`b1.v1
-    # s5e1`e2.v1
-    if st.button("Create Bucket"):
-        if new_bucket_name:
-
-            # s5b1`f1.v1
-            created = create_bucket(bucket_name=new_bucket_name, region=region)
-
-            if created:
-                # s5b1f1`m1.v1
-                st.success(f'Bucket "{new_bucket_name}" created successfully.')
-            else:
-                # s5b1f1`m2.v1
-                st.error("Bucket was not created. Check logs or bucket name.")
-        else:
-            # s5b1`m1.v1
-            st.warning("Enter a bucket name first.")
+                    st.session_state.confirm_delete_files = False
+                    st.info("Delete file action canceled.")
+                    st.rerun()

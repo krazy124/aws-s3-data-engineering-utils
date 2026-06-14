@@ -1,15 +1,11 @@
+"""Reusable S3 bucket, folder, and file operations."""
+
 import logging
 import os
 
-import boto3
-import streamlit as st
-from botocore.exceptions import ClientError, NoCredentialsError, PartialCredentialsError
+from aws_clients import get_active_s3_client, run_safely
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
-
-_S3_CLIENT_CACHE = {}
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
 def normalize_prefix(prefix):
@@ -22,114 +18,6 @@ def normalize_prefix(prefix):
         prefix += "/"
 
     return prefix
-
-
-def get_s3_client(region="us-east-1"):
-    try:
-        client = boto3.client("s3", region_name=region)
-        client.list_buckets()
-
-        logging.info(
-            f"Connected to AWS using local/default credentials in region {region}"
-        )
-
-        return client
-
-    except (NoCredentialsError, PartialCredentialsError) as e:
-        logging.warning(f"Local/default AWS credentials not available: {e}")
-
-    except Exception as e:
-        logging.error(f"Failed local/default AWS connection attempt: {e}")
-
-    try:
-        client = boto3.client(
-            "s3",
-            aws_access_key_id=st.secrets["AWS_ACCESS_KEY_ID"],
-            aws_secret_access_key=st.secrets["AWS_SECRET_ACCESS_KEY"],
-            region_name=st.secrets.get("AWS_DEFAULT_REGION", region),
-        )
-
-        client.list_buckets()
-
-        logging.info("Connected to AWS using Streamlit secrets credentials")
-
-        return client
-
-    except Exception as e:
-        logging.error(f"Failed Streamlit secrets AWS connection attempt: {e}")
-
-    st.warning("AWS credentials were not found. Enter credentials below.")
-
-    with st.form("aws_credentials_form"):
-        access_key = st.text_input("AWS Access Key ID")
-        secret_key = st.text_input("AWS Secret Access Key", type="password")
-        region = st.text_input("AWS Region", value="us-east-1")
-        submitted = st.form_submit_button("Connect to AWS")
-
-    if submitted:
-        st.session_state["aws_access_key_id"] = access_key
-        st.session_state["aws_secret_access_key"] = secret_key
-        st.session_state["aws_region"] = region
-
-        _S3_CLIENT_CACHE.clear()
-
-        logging.info("AWS credentials stored in Streamlit session state")
-
-        st.rerun()
-
-    if "aws_access_key_id" in st.session_state:
-        try:
-            client = boto3.client(
-                "s3",
-                aws_access_key_id=st.session_state["aws_access_key_id"],
-                aws_secret_access_key=st.session_state["aws_secret_access_key"],
-                region_name=st.session_state["aws_region"],
-            )
-
-            client.list_buckets()
-
-            logging.info("Connected to AWS using session state credentials")
-
-            return client
-
-        except Exception as e:
-            logging.error(f"Failed session state AWS connection attempt: {e}")
-
-    logging.error("Unable to establish AWS S3 client connection")
-
-    return None
-
-
-def get_active_s3_client(region="us-east-1", client=None):
-    if client is not None:
-        return client
-
-    if region in _S3_CLIENT_CACHE:
-        return _S3_CLIENT_CACHE[region]
-
-    new_client = get_s3_client(region)
-
-    if new_client is not None:
-        _S3_CLIENT_CACHE[region] = new_client
-
-    return new_client
-
-
-def run_safely(action, default_return=None, error_message="Operation failed"):
-    try:
-        return action()
-
-    except NoCredentialsError:
-        logging.error("AWS credentials not configured.")
-        return default_return
-
-    except ClientError as e:
-        logging.error(f"{error_message}: {e}")
-        return default_return
-
-    except Exception as e:
-        logging.error(f"{error_message}: {e}")
-        return default_return
 
 
 def create_bucket(bucket_name, region="us-east-1", client=None):
@@ -648,5 +536,27 @@ def list_files_in_prefix(bucket_name, prefix, region="us-east-1", client=None):
     )
 
 
-if __name__ == "__main__":
-    bucket_name = "wlmdatawizard-monsterforge-873851887650"
+
+def write_dataframe_to_s3_parquet(df, bucket_name: str, object_prefix: str, mode: str = "overwrite", partition_by: list = None):
+    """Write a Spark DataFrame to S3 as Parquet.
+
+    This expects a PySpark DataFrame. For local pandas DataFrames, convert to
+    Spark first or use a CSV helper.
+    """
+    object_prefix_clean = normalize_prefix(object_prefix)
+    s3_path = f"s3://{bucket_name}/{object_prefix_clean}"
+
+    def action():
+        writer = df.write.mode(mode)
+
+        if partition_by:
+            writer = writer.partitionBy(*partition_by)
+
+        writer.parquet(s3_path)
+        return s3_path
+
+    return run_safely(
+        action,
+        default_return=None,
+        error_message=f"Failed to write DataFrame to {s3_path} as Parquet",
+    )
