@@ -2,6 +2,7 @@
 
 import logging
 import os
+import mimetypes
 
 from aws_clients import get_active_s3_client, run_safely
 
@@ -281,28 +282,30 @@ def upload_folder(bucket_name, folder_path, object_prefix=None, region="us-east-
     )
 
 
-def upload_file(bucket_name, file_path, object_name=None, region="us-east-1", client=None, ):
+def upload_file(bucket_name, file_path, object_name=None, content_type=None, region="us-east-1", client=None, ):
     if object_name is None:
         object_name = os.path.basename(file_path)
 
     object_name = object_name.replace("\\", "/")
 
+    if content_type is None:
+        content_type, _ = mimetypes.guess_type(file_path)
+
     def action():
         s3_client = get_active_s3_client(region, client)
 
-        s3_client.upload_file(
-            file_path,
-            bucket_name,
-            object_name,
-        )
+        extra_args = {}
 
+        if content_type:
+            extra_args["ContentType"] = content_type
+
+        if extra_args:
+            s3_client.upload_file(file_path, bucket_name, object_name, ExtraArgs=extra_args, )
+        else:
+            s3_client.upload_file(file_path, bucket_name, object_name, )
         return True
 
-    return run_safely(
-        action,
-        default_return=False,
-        error_message=f"Failed to upload {file_path} to bucket {bucket_name}",
-    )
+    return run_safely(action, default_return=False, error_message=f"Failed to upload {file_path} to bucket {bucket_name}", )
 
 
 def download_folder(bucket_name, object_prefix, folder_path, region="us-east-1", client=None, ):
@@ -536,7 +539,6 @@ def list_files_in_prefix(bucket_name, prefix, region="us-east-1", client=None):
     )
 
 
-
 def write_dataframe_to_s3_parquet(df, bucket_name: str, object_prefix: str, mode: str = "overwrite", partition_by: list = None):
     """Write a Spark DataFrame to S3 as Parquet.
 
@@ -560,3 +562,26 @@ def write_dataframe_to_s3_parquet(df, bucket_name: str, object_prefix: str, mode
         default_return=None,
         error_message=f"Failed to write DataFrame to {s3_path} as Parquet",
     )
+
+
+def build_upload_extra_args(content_type=None, cache_control=None, metadata=None):
+    extra_args = {}
+
+    if content_type:
+        extra_args["ContentType"] = content_type
+
+    if cache_control:
+        extra_args["CacheControl"] = cache_control
+
+    if metadata:
+        extra_args["Metadata"] = metadata
+
+    return extra_args
+
+
+if __name__ == "__main__":
+    bucket_name = "monsterforge-portfolio-site"
+    region = "us-east-1"
+    file_path = r"C:\Users\willi\OneDrive\Desktop\aws-s3-data-engineering-utils\index.html"
+    results = upload_file(bucket_name, file_path, object_name=None, region=region, client=None, )
+    print(results)

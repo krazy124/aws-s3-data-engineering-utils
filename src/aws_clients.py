@@ -1,3 +1,4 @@
+# aws_client.py
 """Shared AWS client creation and safety helpers."""
 
 import logging
