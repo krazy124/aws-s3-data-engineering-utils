@@ -23,7 +23,16 @@ def list_glue_crawlers(region="us-east-1", client=None):
     )
 
 
-def create_glue_crawler(crawler_name: str, database_name: str, role_arn: str, s3_target_path: str, description: str = "", region: str = "us-east-1", client=None, ):
+def create_glue_crawler(
+    crawler_name: str,
+    database_name: str,
+    role_arn: str,
+    s3_target_path: str,
+    description: str = "",
+    table_prefix: str = "",
+    region: str = "us-east-1",
+    client=None,
+):
     def action():
         glue_client = get_active_glue_client(region, client)
 
@@ -31,26 +40,31 @@ def create_glue_crawler(crawler_name: str, database_name: str, role_arn: str, s3
             logging.error("No active Glue client available.")
             return None
 
-        response = glue_client.create_crawler(
-            Name=crawler_name,
-            Role=role_arn,
-            DatabaseName=database_name,
-            Description=description,
-            Targets={
+        create_args = {
+            "Name": crawler_name,
+            "Role": role_arn,
+            "DatabaseName": database_name,
+            "Description": description,
+            "Targets": {
                 "S3Targets": [
                     {
-                        "Path": s3_target_path
+                        "Path": s3_target_path,
                     }
                 ]
             },
-            SchemaChangePolicy={
+            "SchemaChangePolicy": {
                 "UpdateBehavior": "UPDATE_IN_DATABASE",
                 "DeleteBehavior": "LOG",
             },
-            RecrawlPolicy={
+            "RecrawlPolicy": {
                 "RecrawlBehavior": "CRAWL_EVERYTHING",
             },
-        )
+        }
+
+        if table_prefix:
+            create_args["TablePrefix"] = table_prefix
+
+        response = glue_client.create_crawler(**create_args)
 
         logging.info(f"Created crawler: {crawler_name}")
         return response

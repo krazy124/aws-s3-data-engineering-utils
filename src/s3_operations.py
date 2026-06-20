@@ -3,6 +3,7 @@
 import logging
 import os
 import mimetypes
+from datetime import datetime
 
 from aws_clients import get_active_s3_client, run_safely
 
@@ -67,19 +68,22 @@ def list_buckets(region="us-east-1", client=None):
     )
 
 
-def list_folders(bucket_name, region="us-east-1", client=None):
+def list_folders(bucket_name, prefix="", region="us-east-1", client=None):
     def action():
         s3_client = get_active_s3_client(region, client)
-        response = s3_client.list_objects_v2(Bucket=bucket_name)
 
-        folders = set()
+        prefix_clean = normalize_prefix(prefix)
 
-        for obj in response.get("Contents", []):
-            key = obj["Key"]
+        response = s3_client.list_objects_v2(
+            Bucket=bucket_name,
+            Prefix=prefix_clean,
+            Delimiter="/",
+        )
 
-            if "/" in key:
-                folder_path = "/".join(key.split("/")[:-1]) + "/"
-                folders.add(folder_path)
+        folders = []
+
+        for folder in response.get("CommonPrefixes", []):
+            folders.append(folder["Prefix"])
 
         return sorted(folders)
 

@@ -15,7 +15,7 @@ REGION = "us-east-1"
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-# Backward-compatible alias for the old wizard function name.
+
 def bucket_list(region="us-east-1"):
     return list_buckets(region=region)
 
@@ -130,6 +130,51 @@ def choose_bucket():
     return choose_from_list("Choose S3 Bucket", buckets)
 
 
+def is_risky_crawler_path(s3_path, child_folders=None):
+    path_lower = s3_path.lower()
+
+    risky_parts = [
+        "/runs/",
+        "/latest/",
+        "runs/",
+        "latest/",
+    ]
+
+    if any(part in path_lower for part in risky_parts):
+        return True
+
+    if not s3_path.endswith("/"):
+        return True
+
+    if child_folders:
+        child_text = " ".join(child_folders).lower()
+
+        if "runs/" in child_text or "latest/" in child_text:
+            return True
+
+    return False
+
+
+def show_crawler_path_warning(s3_path):
+    print("\n" + "!" * 70)
+    print("CRAWLER TARGET WARNING")
+    print("!" * 70)
+    print(f"Selected path: {s3_path}")
+    print()
+    print("Recommended crawler targets should point to stable Athena table folders.")
+    print()
+    print("Good examples:")
+    print("  s3://bucket/clean/monsters/table/")
+    print("  s3://bucket/quarantine/monsters/table/")
+    print()
+    print("Avoid:")
+    print("  s3://bucket/clean/monsters/")
+    print("  s3://bucket/clean/monsters/latest/")
+    print("  s3://bucket/clean/monsters/runs/")
+    print("  s3://bucket/clean/monsters/table/monsters_clean.csv")
+    print("!" * 70)
+
+
 def choose_s3_target_path(bucket_name):
     current_prefix = ""
 
@@ -172,10 +217,28 @@ def choose_s3_target_path(bucket_name):
         selected = options[choice_index]
 
         if selected == "Use this folder as crawler target":
-            return f"s3://{bucket_name}/{current_prefix}"
+            s3_path = f"s3://{bucket_name}/{current_prefix}"
+
+            if is_risky_crawler_path(s3_path, folders):
+                show_crawler_path_warning(s3_path)
+
+                confirm = input("\nUse this risky path anyway? (y/n): ").strip().lower()
+
+                if confirm != "y":
+                    continue
+
+            return s3_path
 
         if selected == "Use bucket root as crawler target":
-            return f"s3://{bucket_name}/"
+            s3_path = f"s3://{bucket_name}/"
+            show_crawler_path_warning(s3_path)
+
+            confirm = input("\nUse bucket root anyway? (y/n): ").strip().lower()
+
+            if confirm == "y":
+                return s3_path
+
+            continue
 
         if selected == "Go up one level":
             current_prefix = "/".join(current_prefix.rstrip("/").split("/")[:-1])
@@ -247,6 +310,11 @@ def run_crawler_creation_wizard():
 
     description = input("\nEnter crawler description: ").strip()
 
+    table_prefix = input(
+        "\nEnter table prefix "
+        "(optional, example: monsters_clean_ or monsters_quarantine_): "
+    ).strip()
+
     print("\n" + "=" * 70)
     print("REVIEW CRAWLER SETTINGS")
     print("=" * 70)
@@ -255,6 +323,7 @@ def run_crawler_creation_wizard():
     print(f"Role ARN:       {role_arn}")
     print(f"S3 Target Path: {s3_target_path}")
     print(f"Description:    {description}")
+    print(f"Table Prefix:   {table_prefix}")
 
     confirm = input("\nCreate this crawler? (y/n): ").strip().lower()
 
@@ -268,6 +337,7 @@ def run_crawler_creation_wizard():
         role_arn=role_arn,
         s3_target_path=s3_target_path,
         description=description,
+        table_prefix=table_prefix,
         region=REGION,
     )
 
