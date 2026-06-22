@@ -8,6 +8,9 @@ from datetime import datetime
 import pandas as pd
 
 from pyspark.sql import SparkSession
+from pyspark.sql.functions import (col, lit, lower, upper, trim, regexp_replace,
+                                   when, coalesce, to_date, date_format, current_timestamp,
+                                   concat, concat_ws, split, substring, count, sum, avg, min, max)
 
 
 s3 = boto3.client("s3")
@@ -54,8 +57,43 @@ results2 = run_safely(s3.upload_file, Filename=file, Bucket=bucket_name, Key=run
 
 # --------------------------------------------------------------
 
+spark = (SparkSession.builder .appName("MonsterForge") .getOrCreate())
+
+df = spark.read.csv(file, header=True, inferSchema=True)
+df = df.withColumn("Monster Type", lower(df["Monster Type"]))
+
+
+# groupBy (to group your data by a specific column and perform aggregate functions),
+# filter (to pick rows based on conditions),
+# select (to choose specific columns),
+# orderBy (to sort your data),
+# join (to combine two DataFrames)
+
+
+# print("------------This is the schema------------")
+# df.printSchema()
+# print("------------This is the data------------")
+# df.show(5)
+
 
 # --------------------------------------------------------------
+
+
+"""
+lower()
+upper()
+trim()
+regexp_replace()
+
+cast()
+to_date()
+
+when()
+otherwise()
+
+isNull()
+dropDuplicates()
+"""
 
 """
 Create Clients

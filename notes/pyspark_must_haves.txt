@@ -1,0 +1,59 @@
+lower()
+upper()
+trim()
+regexp_replace()
+when()
+otherwise()
+cast()
+to_date()
+coalesce()
+isNull()
+isNotNull()
+dropDuplicates()
+
+
+col()
+lit()
+concat()
+concat_ws()
+split()
+substring()
+contains()
+isin()
+between()
+date_format()
+current_timestamp()
+count()
+sum()
+avg()
+min()
+max()
+
+
+from pyspark.sql.functions import (
+    col, lit,
+    lower, upper, trim,
+    regexp_replace,
+    when, coalesce,
+    to_date, date_format, current_timestamp,
+    concat, concat_ws, split, substring,
+    count, sum, avg, min, max
+)
+
+withColumn() = change/create one column
+filter() = keep certain rows
+select() = choose columns
+groupBy() = summarize rows
+join() = combine DataFrames
+write() = save results
+
+
+withColumn()
+when()
+regexp_replace()
+cast()
+to_date()
+dropDuplicates()
+isNull()
+groupBy()
+join()
