@@ -1,0 +1,85 @@
+monster_id,monster_name,monster_type,danger_level,created_date,base_price,status,preserve_date,preserve_danger,preserve_price,original_price_negative,duplicate_row
+M001,Venomtail,vampire,6,2026-01-05,6371.0,inactive,1/5/26,6,"$6,371.00",False,False
+M002,Rotjaw,undead,9,2026-01-05,7835.0,active,1/5/26,9,"$7,835.00",False,False
+M003,Cinderwing,undead,7,2026-01-05,7227.0,active,1/5/26,7,"$7,227.00",False,False
+M004,Grimtooth,ghost,7,2026-01-05,10437.0,active,Jan 5 2026,7,"$10,437.00",False,False
+M005,Mist Walker,ghost,2,2026-01-05,2301.0,unknown,2026/01/05,2,"$2,301.00",False,False
+M006,Frostfang,ghost,8,2026-01-05,9744.0,inactive,1/5/26,8,"$9,744.00",False,False
+M008,Swamp Maw,beast,5,2026-01-05,1319.0,unknown,2026/01/05,5,"$1,319.00",False,False
+M009,Voidwing,vampire,10,2026-01-05,9911.0,active,2026/01/05,10,"$9,911.00",False,False
+M010,Venomtail,zombie,8,2026-01-05,1003.0,testing,2026-01-05,8,"$1,003.00",False,False
+M011,Grimtooth,dragon,5,2026-01-05,3171.0,active,1/5/26,5,"$3,171.00",False,False
+M013,Bloodfang,zombie,6,2026-01-05,1372.0,active,2026-01-05,6,"$1,372.00",False,False
+M014,Ashcrawler,vampire,4,2026-01-05,2243.0,testing,2026/01/05,4,"$2,243.00",False,False
+M016,Crypt Stalker,dragon,10,2026-01-05,10654.0,active,Jan 5 2026,10,"$10,654.00",False,False
+M017,Rotjaw,vampire,7,2026-01-05,6211.0,testing,Jan 5 2026,7,"$6,211.00",False,False
+M019,Bone Rattler,undead,10,2026-01-05,3500.0,active,2026-01-05,10,"$3,500.00",False,False
+M021,Grimtooth,vampire,7,2026-01-05,6777.0,inactive,2026/01/05,7,"$6,777.00",False,False
+M022,Ironhide,vampire,8,2026-05-01,500.0,testing,05-01-2026,8,-500,True,False
+M023,Frostfang,dragon,8,2026-05-01,13770.0,unknown,05-01-2026,8,"$13,770.00",False,False
+M024,Cinderwing,ghost,6,2026-01-05,11655.0,unknown,Jan 5 2026,6,"$11,655.00",False,False
+M025,Bone Rattler,dragon,2,2026-01-05,11551.0,active,2026-01-05,2,"$11,551.00",False,False
+M026,Ironhide,ghost,5,2026-05-01,7479.0,inactive,05-01-2026,5,"$7,479.00",False,False
+M028,Thunderclaw,ghost,7,2026-01-05,13523.0,inactive,2026/01/05,7,"$13,523.00",False,False
+M029,Cinderwing,undead,3,2026-01-05,2827.0,active,2026/01/05,3,"$2,827.00",False,False
+M030,Moonstalker,ghost,8,2026-01-05,10093.0,unknown,2026/01/05,8,"$10,093.00",False,False
+M031,Cinderwing,zombie,3,2026-01-05,8292.0,active,2026-01-05,3,"$8,292.00",False,False
+M032,Dreadclaw,zombie,5,2026-01-05,10916.0,unknown,2026/01/05,5,"$10,916.00",False,False
+M033,Night Howler,dragon,3,2026-01-05,966.0,testing,2026/01/05,3,$966.00,False,False
+M034,Venomtail,vampire,6,2026-01-05,4544.0,active,1/5/26,6,"$4,544.00",False,False
+M036,Shadowmaw,vampire,3,2026-05-01,3550.0,active,05-01-2026,3,"$3,550.00",False,False
+M037,Shadowmaw,vampire,3,2026-01-05,4429.0,testing,1/5/26,3,"$4,429.00",False,False
+M038,Voidwing,ghost,3,2026-05-01,606.0,unknown,05-01-2026,3,$606.00,False,False
+M039,Mist Walker,zombie,8,2026-01-05,9547.0,testing,1/5/26,8,"$9,547.00",False,False
+M041,Bloodfang,zombie,5,2026-05-01,14273.0,testing,05-01-2026,5,"$14,273.00",False,False
+M042,Swamp Maw,vampire,1,2026-01-05,1100.0,active,1/5/26,1,USD 1100,False,False
+M043,Ghoulfang,ghost,8,2026-01-05,14114.0,active,Jan 5 2026,8,"$14,114.00",False,False
+M045,Venomtail,dragon,8,2026-01-05,13980.0,active,1/5/26,8,"$13,980.00",False,False
+M046,Frostfang,vampire,10,2026-01-05,8539.0,active,Jan 5 2026,10,"$8,539.00",False,False
+M047,Crypt Stalker,dragon,5,2026-01-05,14091.0,active,2026-01-05,5,"$14,091.00",False,False
+M049,Venomtail,beast,2,2026-05-01,14237.0,active,05-01-2026,2,"$14,237.00",False,False
+M050,Moonstalker,vampire,2,2026-01-05,12333.0,unknown,1/5/26,2,"$12,333.00",False,False
+M051,Shadowmaw,ghost,7,2026-01-05,5995.0,active,Jan 5 2026,7,"$5,995.00",False,False
+M052,Venomtail,dragon,2,2026-01-05,13909.0,active,2026/01/05,2,"$13,909.00",False,False
+M053,Mist Walker,dragon,9,2026-01-05,3070.0,testing,Jan 5 2026,9,"$3,070.00",False,False
+M054,Bloodfang,undead,8,2026-01-05,13877.0,testing,1/5/26,8,"$13,877.00",False,False
+M056,Voidwing,dragon,6,2026-05-01,6844.0,active,05-01-2026,6,"$6,844.00",False,False
+M057,Cinderwing,dragon,4,2026-01-05,7098.0,testing,Jan 5 2026,4,"$7,098.00",False,False
+M058,Bloodfang,vampire,6,2026-05-01,11347.0,active,05-01-2026,6,"$11,347.00",False,False
+M059,Crypt Stalker,vampire,10,2026-05-01,9660.0,unknown,05-01-2026,10,"$9,660.00",False,False
+M061,Frostfang,dragon,9,2026-01-05,13758.0,active,2026-01-05,9,"$13,758.00",False,False
+M062,Stormscale,vampire,9,2026-01-05,1100.0,active,1/5/26,9,USD 1100,False,False
+M063,Ironhide,zombie,6,2026-01-05,13016.0,unknown,1/5/26,6,"$13,016.00",False,False
+M064,Shadowmaw,vampire,5,2026-05-01,14936.0,active,05-01-2026,5,"$14,936.00",False,False
+M065,Rotjaw,dragon,1,2026-01-05,3239.0,inactive,2026-01-05,1,"$3,239.00",False,False
+M066,Dreadclaw,undead,10,2026-01-05,11138.0,active,2026-01-05,10,"$11,138.00",False,False
+M067,Cinderwing,beast,6,2026-01-05,5355.0,active,2026-01-05,6,"$5,355.00",False,False
+M068,Bone Rattler,dragon,2,2026-01-05,4880.0,unknown,2026-01-05,2,"$4,880.00",False,False
+M069,Stormscale,ghost,4,2026-01-05,14987.0,testing,1/5/26,4,"$14,987.00",False,False
+M070,Ashcrawler,zombie,10,2026-01-05,11770.0,testing,2026-01-05,10,"$11,770.00",False,False
+M072,Dreadclaw,undead,2,2026-01-05,9187.0,active,2026/01/05,2,"$9,187.00",False,False
+M073,Cinderwing,undead,7,2026-01-05,1583.0,unknown,2026-01-05,7,"$1,583.00",False,False
+M074,Frostfang,beast,4,2026-01-05,12771.0,unknown,1/5/26,4,"$12,771.00",False,False
+M075,Dreadclaw,zombie,7,2026-01-05,3025.0,inactive,2026/01/05,7,"$3,025.00",False,False
+M076,Swamp Maw,beast,4,2026-05-01,8587.0,testing,05-01-2026,4,"$8,587.00",False,False
+M078,Dreadclaw,undead,3,2026-01-05,9059.0,testing,2026/01/05,3,"$9,059.00",False,False
+M079,Bloodfang,undead,10,2026-01-05,10813.0,unknown,Jan 5 2026,10,"$10,813.00",False,False
+M081,Swamp Maw,vampire,3,2026-01-05,9791.0,active,1/5/26,3,"$9,791.00",False,False
+M082,Voidwing,vampire,8,2026-01-05,500.0,active,2026-01-05,8,-500,True,False
+M083,Voidwing,beast,8,2026-01-05,7158.0,active,2026/01/05,8,"$7,158.00",False,False
+M084,Moonstalker,beast,3,2026-01-05,831.0,unknown,Jan 5 2026,3,$831.00,False,False
+M085,Venomtail,vampire,2,2026-01-05,1845.0,active,2026-01-05,2,"$1,845.00",False,False
+M086,Bloodfang,zombie,5,2026-01-05,10507.0,active,Jan 5 2026,5,"$10,507.00",False,False
+M087,Frostfang,dragon,6,2026-01-05,8312.0,active,2026-01-05,6,"$8,312.00",False,False
+M088,Swamp Maw,zombie,1,2026-01-05,1119.0,active,2026/01/05,1,"$1,119.00",False,False
+M090,Ironhide,undead,7,2026-01-05,5158.0,testing,Jan 5 2026,7,"$5,158.00",False,False
+M091,Rotjaw,ghost,9,2026-01-05,7916.0,inactive,Jan 5 2026,9,"$7,916.00",False,False
+M092,Frostfang,zombie,1,2026-01-05,12099.0,unknown,2026-01-05,1,"$12,099.00",False,False
+M093,Crypt Stalker,beast,10,2026-01-05,1813.0,testing,1/5/26,10,"$1,813.00",False,False
+M094,Grimtooth,zombie,9,2026-01-05,3465.0,testing,1/5/26,9,"$3,465.00",False,False
+M095,Ashcrawler,dragon,4,2026-01-05,10051.0,unknown,Jan 5 2026,4,"$10,051.00",False,False
+M096,Crypt Stalker,zombie,5,2026-05-01,6661.0,inactive,05-01-2026,5,"$6,661.00",False,False
+M097,Shadowmaw,vampire,6,2026-01-05,13000.0,inactive,Jan 5 2026,6,"$13,000.00",False,False
+M098,Swamp Maw,undead,9,2026-01-05,14770.0,inactive,2026/01/05,9,"$14,770.00",False,False
+M099,Ghoulfang,vampire,2,2026-01-05,8749.0,testing,2026-01-05,2,"$8,749.00",False,False
+M100,Grimtooth,dragon,5,2026-05-01,6140.0,active,05-01-2026,5,"$6,140.00",False,False

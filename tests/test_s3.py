@@ -1,6 +1,6 @@
 import boto3
 from pprint import pprint
-import notes.bag_of_tricks as tricks
+import notes.py_files.bag_of_tricks as tricks
 
 
 s3 = boto3.client("s3")
