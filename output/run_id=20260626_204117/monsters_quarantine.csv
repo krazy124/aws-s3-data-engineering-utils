@@ -1,0 +1,22 @@
+monster_id,monster_name,monster_type,danger_level,created_date,base_price,status,preserve_date,preserve_danger,preserve_price,original_price_negative,duplicate_row
+M007,Crypt Stalker,ghost,3.0,2026-01-05,614.0,testing,2026-01-05,3,$614.00,False,True
+M012,,ghost,3.0,2026-01-05,9578.0,unknown,1/5/26,3,"$9,578.00",False,False
+M015,Bloodfang,vampire,,2026-05-01,10971.0,testing,05-01-2026,two,"$10,971.00",False,False
+M018,Shadowmaw,undead,3.0,,2328.0,testing,not a date,3,"$2,328.00",False,False
+M020,Venomtail,dragon,5.0,2026-01-05,7955.0,testing,2026/01/05,5,"$7,955.00",False,True
+M027,,vampire,7.0,2026-01-05,12849.0,active,2026-01-05,7,"$12,849.00",False,False
+M035,Moonstalker,ghost,,2026-05-01,6725.0,active,05-01-2026,High,"$6,725.00",False,False
+M040,Stormscale,vampire,8.0,2026-01-05,5418.0,inactive,1/5/26,8,"$5,418.00",False,True
+M044,,zombie,7.0,2026-05-01,6795.0,active,05-01-2026,7,"$6,795.00",False,False
+M048,Thunderclaw,undead,3.0,,2698.0,testing,32/13/2026,3,"$2,698.00",False,False
+M055,Ghoulfang,dragon,,2026-01-05,1187.0,unknown,Jan 5 2026,two,"$1,187.00",False,False
+M060,Crypt Stalker,vampire,2.0,2026-01-05,9142.0,testing,1/5/26,2,"$9,142.00",False,True
+M071,,ghost,1.0,2026-05-01,10870.0,inactive,05-01-2026,1,"$10,870.00",False,False
+M077,Voidwing,zombie,1.0,,14662.0,unknown,not a date,1,"$14,662.00",False,False
+M080,Crypt Stalker,beast,9.0,2026-01-05,512.0,active,2026-01-05,9,$512.00,False,True
+M089,,undead,4.0,2026-05-01,805.0,inactive,05-01-2026,4,$805.00,False,False
+M007,Crypt Stalker,ghost,3.0,2026-01-05,614.0,testing,2026-01-05,3,$614.00,False,True
+M020,Venomtail,dragon,5.0,2026-01-05,7955.0,testing,2026/01/05,5,"$7,955.00",False,True
+M040,Stormscale,vampire,8.0,2026-01-05,5418.0,inactive,1/5/26,8,"$5,418.00",False,True
+M060,Crypt Stalker,vampire,2.0,2026-01-05,9142.0,testing,1/5/26,2,"$9,142.00",False,True
+M080,Crypt Stalker,beast,9.0,2026-01-05,512.0,active,2026-01-05,9,$512.00,False,True

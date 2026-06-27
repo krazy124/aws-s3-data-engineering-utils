@@ -8,10 +8,9 @@ import boto3
 import logging
 from botocore.exceptions import ClientError, NoCredentialsError
 from pprint import pprint
-from datetime import datetime
-
+from datetime import datetime, time
 import pandas as pd
-
+import time
 import os
 
 s3 = boto3.client("s3")
@@ -61,11 +60,8 @@ df = spark.read.csv(file, header=True, inferSchema=True)
 
 
 def damage_report(df):
-    print("--------------------------------------------------------\n")
-    print("\n========== DAMAGE REPORT ==========")
 
     row_count = df.count()
-    print(f"Row Count: {row_count}\n")
 
     print("\n========== FINDINGS ==========")
 
@@ -105,22 +101,14 @@ def damage_report(df):
             distinct_count = df.select(column_name).distinct().count()
             print(f"INFO: {column_name} has {distinct_count} distinct values")
 
-    print("\n========== COLUMN PROFILE ==========\n")
+    print("\n========== COLUMN PROFILE ==========")
 
     rows = []
 
     for column_name, data_type in df.dtypes:
-        row = {
-            "column": column_name,
-            "schema": data_type,
-            "null_count": str(df.filter(col(column_name).isNull()).count()),
-            "blank_count": (
-                str(df.filter(trim(col(column_name)) == "").count())
-                if data_type == "string"
-                else "N/A"
-            ),
-            "distinct_count": str(df.select(column_name).distinct().count())
-        }
+        row = {"column": column_name, "schema": data_type, "null_count": str(df.filter(col(column_name).isNull()).count()),
+               "blank_count": (str(df.filter(trim(col(column_name)) == "").count()) if data_type == "string" else "N/A"),
+               "distinct_count": str(df.select(column_name).distinct().count())}
 
         rows.append(row)
 
@@ -129,10 +117,7 @@ def damage_report(df):
     # calculate column widths
     widths = {}
     for column in columns:
-        widths[column] = max(
-            len(column),
-            max(len(str(row.get(column, ""))) for row in rows)
-        )
+        widths[column] = max(len(column), max(len(str(row.get(column, ""))) for row in rows))
 
     # print header
     header = " | ".join(column.ljust(widths[column]) for column in columns)
@@ -143,13 +128,9 @@ def damage_report(df):
 
     # print rows
     for row in rows:
-        line = " | ".join(
-            str(row.get(column, "")).ljust(widths[column])
-            for column in columns
-        )
+        line = " | ".join(str(row.get(column, "")).ljust(widths[column]) for column in columns)
         print(line)
-
-    print("\n--------------------------------------------------------")
+    print("\n")
 
 
 pipeline_plan = [
@@ -180,7 +161,8 @@ pipeline_plan = [
 def before_transformations(df):
     print("\n-------------------------------Before Transformations--------------------------------")
     damage_report(df)
-    df.show(50)
+    print("============================= Before Transformations =============================")
+    df.show(30)
     print("\n========== Required Transformation Order ============================")
     for step_num, (transform_name, columns) in enumerate(pipeline_plan, start=1):
         print(f"{step_num:02d}. {transform_name:<20} {columns}")
@@ -188,11 +170,9 @@ def before_transformations(df):
 
 
 def after_transformations(df, clean_df, quarantine_df):
-    print("\n-------------------------------Quarantine Data---------------------------------")
-    quarantine_df.show()
-    print("\n-------------------------------Clean Data---------------------------------")
-    clean_df.show()
-    print("\n========== CLEAN / QUARANTINE SUMMARY ==========")
+    print("\n========== After Transformations ==========")
+    clean_df.show(30)
+    print("\n========== CLEAN / QUARANTINE SUMMARY ==================")
     print(f"Total Rows: {df.count()}")
     print(f"Clean Rows: {clean_df.count()}")
     print(f"Quarantine Rows: {quarantine_df.count()}")
@@ -291,6 +271,30 @@ def export_to_s3(clean_local_file, quarantine_local_file, run_id):
             print(f"✓ Verified: s3://{bucket_name}/{key} | {response['ContentLength']} bytes")
 
 
+def run_glue_crawlers():
+    print("\n========== GLUE CRAWLERS ==========")
+
+    crawlers = ["monsterforge-clean-crawler", "monsterforge-quarantine-crawler"]
+
+    for crawler_name in crawlers:
+        run_safely(glue.start_crawler, Name=crawler_name, error_message=f"Failed to start {crawler_name}")
+        previous_state = None
+        while True:
+            response = run_safely(glue.get_crawler, Name=crawler_name, error_message=f"Failed to check {crawler_name} status")
+            if response is None:
+                break
+            state = response["Crawler"]["State"]
+            if state != previous_state:
+                print(f"{crawler_name}: {state}")
+                previous_state = state
+            if state == "READY":
+                break
+            time.sleep(10)
+
+    print("✓ Glue crawlers completed")
+
+
 clean_df, quarantine_df = transform_data(df)
 clean_local_file, quarantine_local_file = export_to_local(clean_df, quarantine_df, run_id)
 export_to_s3(clean_local_file, quarantine_local_file, run_id)
+# run_glue_crawlers()
